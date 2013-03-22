@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="fill_parent"
+	android:orientation="vertical">
+	<LinearLayout
+		android:layout_gravity="center_horizontal"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content">
+		<TextView
+			android:text="Mode:"
+			android:layout_gravity="center_vertical"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content" />
+		<Spinner
+			android:id="@+id/mode"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content" />
+	</LinearLayout>
+	<LinearLayout
+		android:visibility="gone"
+		android:id="@+id/layout_cool"
+		android:layout_weight="1"
+		android:layout_width="fill_parent"
+		android:layout_height="0dp"
+		android:orientation="vertical">
+		<ScrollView
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content">
+			<HorizontalScrollView
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:scrollbars="none">
+				<TableLayout
+					android:id="@+id/table_cool"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content" />
+			</HorizontalScrollView>
+		</ScrollView>
+		<Button
+			android:id="@+id/update_cool"
+			android:layout_gravity="center_horizontal"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="Update" />
+	</LinearLayout>
+	<LinearLayout
+		android:visibility="gone"
+		android:id="@+id/layout_heat"
+		android:layout_weight="1"
+		android:layout_width="fill_parent"
+		android:layout_height="0dp"
+		android:orientation="vertical">
+		<ScrollView
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content">
+			<HorizontalScrollView
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:scrollbars="none">
+				<TableLayout
+					android:id="@+id/table_heat"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content" />
+			</HorizontalScrollView>
+		</ScrollView>
+		<Button
+			android:id="@+id/update_heat"
+			android:layout_gravity="center_horizontal"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="Update" />
+	</LinearLayout>
+	<TextView
+		android:id="@+id/status"
+		android:layout_gravity="center_horizontal"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content" />
+</LinearLayout>
