@@ -530,12 +530,16 @@ public class Thermostat extends Activity {
 		View v = this.getCurrentFocus();
 		if (v != null) {
 			// these only make sense if we have a focused control
-			menu.add(Menu.NONE, MENU_DELETE, Menu.NONE, "Delete item");
+			// figure out which row this is
+			TableRow row = (TableRow) v.getParent();
+			if (row.getChildCount() > 3) {
+				// should not be able to delete only control
+				menu.add(Menu.NONE, MENU_DELETE, Menu.NONE, "Delete item");
+			}
 			menu.add(Menu.NONE, MENU_ADD_BEFORE, Menu.NONE, "Insert item before");
 			menu.add(Menu.NONE, MENU_ADD_AFTER, Menu.NONE, "Insert item after");
 
-			// figure out which row this is
-			TableRow row = (TableRow) v.getParent();
+			// figure out where we are in the row
 			TableLayout tbl = (TableLayout) row.getParent();
 			int i = tbl.indexOfChild(row);
 			if (i > 0) {
