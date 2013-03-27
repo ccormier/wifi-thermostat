@@ -30,6 +30,7 @@ import android.text.InputType;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
@@ -48,6 +49,7 @@ public class Thermostat extends Activity {
 	private static final int MENU_ADD_AFTER = 2;
 	private static final int MENU_COPY_ABOVE = 3;
 	private static final int MENU_COPY_BELOW = 4;
+	private static final int MENU_REFRESH = 50;
 	private static final int MENU_EXIT = 99;
 
 	// bundle keys
@@ -75,6 +77,7 @@ public class Thermostat extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 		setContentView(R.layout.thermostat);
 
 		state_old = savedInstanceState;
@@ -343,6 +346,7 @@ public class Thermostat extends Activity {
 
 		@Override
 		protected void onProgressUpdate(String... values) {
+			setProgressBarIndeterminateVisibility(true);
 			status(values[0]);
 		}
 	}
@@ -399,6 +403,7 @@ public class Thermostat extends Activity {
 	class FetchMode extends ReadURL {
 		@Override
 		protected void onPostExecute(Void result) {
+			setProgressBarIndeterminateVisibility(false);
 			if (error != null) {
 				status(error);
 				return;
@@ -424,6 +429,7 @@ public class Thermostat extends Activity {
 
 		@Override
 		protected void onPostExecute(Void result) {
+			setProgressBarIndeterminateVisibility(false);
 			if (error != null) {
 				status(error);
 				return;
@@ -551,13 +557,15 @@ public class Thermostat extends Activity {
 				menu.add(Menu.NONE, MENU_COPY_BELOW, Menu.NONE, "Copy row below");
 			}
 		}
+		menu.add(Menu.NONE, MENU_REFRESH, Menu.NONE, "Refresh");
 		menu.add(Menu.NONE, MENU_EXIT, Menu.NONE, "Exit");
 		return true;
 	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		if (item.getItemId() == MENU_EXIT) {
+		int choice = item.getItemId();
+		if (choice == MENU_EXIT) {
 			finish();
 			return true;
 		}
@@ -575,27 +583,65 @@ public class Thermostat extends Activity {
 		TableRow row = (TableRow) v.getParent();
 		int i = row.indexOfChild(v);
 
-		switch (item.getItemId()) {
-		case MENU_DELETE:
-			// delete current temperature control
+		// delete current temperature control
+		if (choice == MENU_DELETE) {
 			row.removeView(v);
 			row.removeViewAt(i - 1);
+
+			// fix focus
+			if (i > row.getChildCount()) {
+				i = row.getChildCount() - 1;
+			}
+			row.getChildAt(i).requestFocus();
 			return true;
-		case MENU_ADD_BEFORE:
-			// insert a temperature control before this one
-			row.addView(createTemp(v.getMeasuredWidth()), i - 1);
-			row.addView(new TimeButton(this), i - 1);
+		}
+
+		// add control before or after this one
+		if ((choice == MENU_ADD_BEFORE) || (choice == MENU_ADD_AFTER)) {
+			if (choice == MENU_ADD_BEFORE) {
+				i--;
+			} else {
+				i++;
+			}
+			row.addView(createTemp(v.getMeasuredWidth()), i);
+			row.addView(new TimeButton(this), i);
 			return true;
-		case MENU_ADD_AFTER:
-			// insert a temperature control after this one
-			row.addView(createTemp(v.getMeasuredWidth()), i + 1);
-			row.addView(new TimeButton(this), i + 1);
-			return true;
-		case MENU_COPY_ABOVE:
-			// replace this row with a copy of the row above
-			return true;
-		case MENU_COPY_BELOW:
-			// replace this row with a copy of the row below
+		}
+
+		// replace this row with a copy of the row above or below
+		if ((choice == MENU_COPY_ABOVE) || (choice == MENU_COPY_BELOW)) {
+			// find our current row
+			TableLayout tbl = (TableLayout) row.getParent();
+			int j = tbl.indexOfChild(row);
+
+			// remove current controls
+			row.removeViews(1, row.getChildCount() - 1);
+
+			// find source sibling row
+			TableRow src;
+			if (choice == MENU_COPY_ABOVE) {
+				src = (TableRow) tbl.getChildAt(j - 1);
+			} else {
+				src = (TableRow) tbl.getChildAt(j + 1);
+			}
+
+			// copy controls
+			for (int k = 1; k < src.getChildCount(); k += 2) {
+				TimeButton btn_src = (TimeButton) src.getChildAt(k);
+				TimeButton btn_dst = new TimeButton(Thermostat.this);
+				btn_dst.setTime(btn_src.getTime());
+				btn_dst.setText();
+				row.addView(btn_dst);
+
+				EditText et_src = (EditText) src.getChildAt(k + 1);
+				row.addView(createTemp(et_src.getText().toString()));
+			}
+
+			// fix focus
+			if (i > row.getChildCount()) {
+				i = row.getChildCount() - 1;
+			}
+			row.getChildAt(i).requestFocus();
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
