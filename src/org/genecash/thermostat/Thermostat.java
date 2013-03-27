@@ -23,6 +23,7 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -43,6 +44,11 @@ import android.widget.TableRow;
 import android.widget.TextView;
 
 public class Thermostat extends Activity {
+	// Persistent preferences values
+	private static SharedPreferences sSettings;
+	private static final String PREFS_NAME = "SpendItPrefs";
+	protected static final String PREF_TAB = "Tab";
+
 	// menu constants
 	private static final int MENU_DELETE = 0;
 	private static final int MENU_ADD_BEFORE = 1;
@@ -53,7 +59,6 @@ public class Thermostat extends Activity {
 
 	// bundle keys
 	private static final String ADDR_KEY = "addr";
-	private static final String TAB_KEY = "tab";
 
 	int oldMode;
 	String addr = null;
@@ -79,8 +84,8 @@ public class Thermostat extends Activity {
 		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 		setContentView(R.layout.thermostat);
 
+		sSettings = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
 		state_old = savedInstanceState;
-
 		msg_line = (TextView) findViewById(R.id.status);
 
 		// locate thermostat on the network
@@ -121,7 +126,7 @@ public class Thermostat extends Activity {
 		actionBar.addTab(tab);
 
 		// reselect the previously selected tab
-		if ((state_old != null) && (state_old.containsKey(TAB_KEY)) && (state_old.getString(TAB_KEY).equals(tab.getText().toString()))) {
+		if (tab.getText().toString().equals(sSettings.getString(PREF_TAB, ""))) {
 			tab.select();
 		}
 
@@ -179,6 +184,7 @@ public class Thermostat extends Activity {
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
+
 		// save thermostat address
 		if (addr != null) {
 			outState.putString(ADDR_KEY, addr);
@@ -187,9 +193,11 @@ public class Thermostat extends Activity {
 		for (String s : state_new.keySet()) {
 			outState.putString(s, state_new.get(s).toString());
 		}
-		// save currently selected tab
+		// save currently selected tab as a preference so it stays around
 		if (actionBar != null) {
-			outState.putString(TAB_KEY, actionBar.getSelectedTab().getText().toString());
+			SharedPreferences.Editor editor = getSharedPreferences(PREFS_NAME, 0).edit();
+			editor.putString(PREF_TAB, actionBar.getSelectedTab().getText().toString());
+			editor.commit();
 		}
 	}
 
@@ -532,12 +540,8 @@ public class Thermostat extends Activity {
 		super.onPrepareOptionsMenu(menu);
 		menu.clear();
 		View v = this.getCurrentFocus();
-		if (v != null) {
-			// these only make sense if we have a focused control
-			if (!(v instanceof EditText)) {
-				return true;
-			}
-
+		// these only make sense if we have a focused control
+		if ((v != null) && (v instanceof EditText)) {
 			// figure out which row this is
 			TableRow row = (TableRow) v.getParent();
 			if (row.getChildCount() > 3) {
