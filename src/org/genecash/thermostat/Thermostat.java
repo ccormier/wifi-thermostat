@@ -534,6 +534,10 @@ public class Thermostat extends Activity {
 		View v = this.getCurrentFocus();
 		if (v != null) {
 			// these only make sense if we have a focused control
+			if (!(v instanceof EditText)) {
+				return true;
+			}
+
 			// figure out which row this is
 			TableRow row = (TableRow) v.getParent();
 			if (row.getChildCount() > 3) {
