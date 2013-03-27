@@ -57,7 +57,7 @@ public class Thermostat extends Activity {
 	int oldMode;
 	String addr = null;
 	Spinner mode;
-	TextView status;
+	TextView msg_line;
 	ActionBar actionBar = null;
 
 	// the thermostat is single-threaded, this ensures we stick to that
@@ -79,7 +79,7 @@ public class Thermostat extends Activity {
 
 		state_old = savedInstanceState;
 
-		status = (TextView) findViewById(R.id.status);
+		msg_line = (TextView) findViewById(R.id.status);
 
 		// locate thermostat on the network
 		if ((state_old != null) && (state_old.containsKey(ADDR_KEY))) {
@@ -94,7 +94,7 @@ public class Thermostat extends Activity {
 			}
 			if (addr.startsWith("*")) {
 				// we got an error looking for the thermostat, display it and bail
-				message(addr.substring(1));
+				status(addr.substring(1));
 				addr = null;
 				return;
 			}
@@ -145,15 +145,14 @@ public class Thermostat extends Activity {
 					return;
 				}
 				oldMode = position;
-				message("Setting mode");
 				JSONObject json = new JSONObject();
 				try {
 					json.put("tmode", mode.getSelectedItemPosition());
 				} catch (Exception e) {
-					message(e.toString());
+					status(e.toString());
 					return;
 				}
-				new WriteURL().execute("tstat", json.toString());
+				new WriteURL().execute("tstat", json.toString(), "Setting mode");
 			}
 
 			@Override
@@ -162,16 +161,16 @@ public class Thermostat extends Activity {
 		});
 
 		// load mode spinner
-		new FetchMode().execute("tstat");
+		new FetchMode().execute("tstat", "Loading mode");
 	}
 
-	// display status message in a stacked fashion
-	void message(String m) {
-		status.setText(m);
-	}
-
-	void clear() {
-		status.setText("");
+	// display status message
+	void status(String m) {
+		if (m == null) {
+			msg_line.setText("");
+		} else {
+			msg_line.setText(m);
+		}
 	}
 
 	// squirrel away our hard-earned data when bad things happen
@@ -214,15 +213,13 @@ public class Thermostat extends Activity {
 			mCtrl.setVisibility(View.VISIBLE);
 			if (!populated) {
 				populated = true;
-				message(mPrompt);
-				new FetchProgram().execute(mPath);
+				new FetchProgram().execute(mPath, mPrompt);
 			}
 
 			// set up action for update button
 			mBtn.setOnClickListener(new View.OnClickListener() {
 				@Override
 				public void onClick(View v) {
-					message("Sending program");
 					updateProgram(mPath, mTbl);
 				}
 			});
@@ -297,8 +294,9 @@ public class Thermostat extends Activity {
 	}
 
 	// generic class to read stuff from thermostat
+	// takes 2 arguments: URL path, and status message
 	// all the subclasses implement onPostExecute() so we don't even try
-	class ReadURL extends AsyncTask<String, Void, Void> {
+	class ReadURL extends AsyncTask<String, String, Void> {
 		String error = null;
 		String path;
 		JSONObject json = null;
@@ -309,6 +307,7 @@ public class Thermostat extends Activity {
 			netLock.lock();
 			try {
 				path = params[0];
+				publishProgress(params[1]);
 
 				// check to see if we have this data already
 				if ((state_old != null) && (state_old.containsKey(path))) {
@@ -341,16 +340,23 @@ public class Thermostat extends Activity {
 			// why are Void and void different? because java's design is broken
 			return null;
 		}
+
+		@Override
+		protected void onProgressUpdate(String... values) {
+			status(values[0]);
+		}
 	}
 
 	// generic class to write stuff to thermostat
-	class WriteURL extends AsyncTask<String, Void, Void> {
+	// takes 3 arguments: URL path, data string, and status message
+	class WriteURL extends AsyncTask<String, String, Void> {
 		String error = null;
 
 		@Override
 		protected Void doInBackground(String... params) {
 			netLock.lock();
 			try {
+				publishProgress(params[2]);
 				URL url = new URL("http://" + addr + "/" + params[0]);
 				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 				conn.setDoOutput(true);
@@ -374,13 +380,18 @@ public class Thermostat extends Activity {
 			return null;
 		}
 
+		@Override
+		protected void onProgressUpdate(String... values) {
+			status(values[0]);
+		}
+
 		// display an error if we get one
 		protected void onPostExecute(Void result) {
 			if (error != null) {
-				message(error);
+				status(error);
 				return;
 			}
-			clear();
+			status(null);
 		}
 	}
 
@@ -389,7 +400,7 @@ public class Thermostat extends Activity {
 		@Override
 		protected void onPostExecute(Void result) {
 			if (error != null) {
-				message(error);
+				status(error);
 				return;
 			}
 			try {
@@ -397,9 +408,10 @@ public class Thermostat extends Activity {
 				oldMode = json.getInt("tmode");
 				mode.setSelection(oldMode);
 			} catch (Exception e) {
-				message(e.toString());
+				status(e.toString());
 				return;
 			}
+			status(null);
 		}
 	}
 
@@ -413,7 +425,7 @@ public class Thermostat extends Activity {
 		@Override
 		protected void onPostExecute(Void result) {
 			if (error != null) {
-				message(error);
+				status(error);
 				return;
 			}
 			// draw the GUI
@@ -449,10 +461,10 @@ public class Thermostat extends Activity {
 					ndx++;
 				}
 			} catch (Exception e) {
-				message(e.toString());
+				status(e.toString());
 				return;
 			}
-			clear();
+			status(null);
 		}
 	}
 
@@ -474,21 +486,21 @@ public class Thermostat extends Activity {
 					temp = et.getText().toString().trim();
 					jarray.put(Integer.parseInt(temp));
 				} catch (Exception e) {
-					message("Error: \"" + temp + "\" is not a valid temperature");
+					status("Error: \"" + temp + "\" is not a valid temperature");
 					return;
 				}
 			}
 			try {
 				json.put(i + "", jarray);
 			} catch (Exception e) {
-				message(e.toString());
+				status(e.toString());
 				return;
 			}
 		}
 
 		// do it to it
 		state_new.put(path, json);
-		new WriteURL().execute(path, json.toString());
+		new WriteURL().execute(path, json.toString(), "Sending program");
 	}
 
 	// create & populate new temperature control
