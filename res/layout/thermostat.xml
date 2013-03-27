@@ -74,6 +74,7 @@
 	</LinearLayout>
 	<TextView
 		android:id="@+id/status"
+		android:textIsSelectable="true"
 		android:layout_gravity="center_horizontal"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content" />

@@ -49,8 +49,7 @@ public class Thermostat extends Activity {
 	private static final int MENU_ADD_AFTER = 2;
 	private static final int MENU_COPY_ABOVE = 3;
 	private static final int MENU_COPY_BELOW = 4;
-	private static final int MENU_REFRESH = 50;
-	private static final int MENU_EXIT = 99;
+	private static final int MENU_REFRESH = 5;
 
 	// bundle keys
 	private static final String ADDR_KEY = "addr";
@@ -201,7 +200,6 @@ public class Thermostat extends Activity {
 		Button mBtn;
 		String mPath;
 		String mPrompt;
-		boolean populated;
 
 		public MyTabListener(int ctrl, int btn, int tbl, String path, String prompt) {
 			mCtrl = (LinearLayout) findViewById(ctrl);
@@ -209,13 +207,11 @@ public class Thermostat extends Activity {
 			mBtn = (Button) findViewById(btn);
 			mPath = path;
 			mPrompt = prompt;
-			populated = false;
 		}
 
 		public void onTabSelected(Tab tab, FragmentTransaction ft) {
 			mCtrl.setVisibility(View.VISIBLE);
-			if (!populated) {
-				populated = true;
+			if (mTbl.getChildCount() == 0) {
 				new FetchProgram().execute(mPath, mPrompt);
 			}
 
@@ -233,6 +229,8 @@ public class Thermostat extends Activity {
 		}
 
 		public void onTabReselected(Tab tab, FragmentTransaction ft) {
+			// reload if necessary
+			onTabSelected(tab, ft);
 		}
 	}
 
@@ -558,15 +556,28 @@ public class Thermostat extends Activity {
 			}
 		}
 		menu.add(Menu.NONE, MENU_REFRESH, Menu.NONE, "Refresh");
-		menu.add(Menu.NONE, MENU_EXIT, Menu.NONE, "Exit");
 		return true;
 	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		int choice = item.getItemId();
-		if (choice == MENU_EXIT) {
-			finish();
+
+		// delete old controls and refetch data
+		if (choice == MENU_REFRESH) {
+			// delete old controls
+			TableLayout tbl;
+			tbl = (TableLayout) findViewById(R.id.table_cool);
+			tbl.removeViews(0, tbl.getChildCount());
+			tbl = (TableLayout) findViewById(R.id.table_heat);
+			tbl.removeViews(0, tbl.getChildCount());
+			state_old = null;
+
+			// reload mode spinner
+			new FetchMode().execute("tstat", "Loading mode");
+
+			// reload tab
+			actionBar.selectTab(actionBar.getSelectedTab());
 			return true;
 		}
 
