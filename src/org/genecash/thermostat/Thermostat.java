@@ -42,11 +42,15 @@ import android.widget.TableRow;
 import android.widget.TextView;
 
 public class Thermostat extends Activity {
+	// menu constants
 	private static final int MENU_DELETE = 0;
 	private static final int MENU_ADD_BEFORE = 1;
 	private static final int MENU_ADD_AFTER = 2;
-	private static final int MENU_EXIT = 3;
+	private static final int MENU_COPY_ABOVE = 3;
+	private static final int MENU_COPY_BELOW = 4;
+	private static final int MENU_EXIT = 99;
 
+	// bundle keys
 	private static final String ADDR_KEY = "addr";
 	private static final String TAB_KEY = "tab";
 
@@ -59,12 +63,13 @@ public class Thermostat extends Activity {
 	// the thermostat is single-threaded, this ensures we stick to that
 	final ReentrantLock netLock = new ReentrantLock();
 
+	// old and new control states
 	Bundle state_old;
 	final HashMap<String, JSONObject> state_new = new HashMap<String, JSONObject>();
 
 	SimpleDateFormat prettyFormat = new SimpleDateFormat("hh:mm a", Locale.US);
 	Calendar cal = prettyFormat.getCalendar();
-	// no motherfucking clue how to get these in a localized manner. fuck it, I'll just hard code it!
+	// no clue how to get these in a localized manner, so I hardcoded them
 	String[] days = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
 
 	@Override
@@ -76,7 +81,7 @@ public class Thermostat extends Activity {
 
 		status = (TextView) findViewById(R.id.status);
 
-		// message("Locating thermostat");
+		// locate thermostat on the network
 		if ((state_old != null) && (state_old.containsKey(ADDR_KEY))) {
 			addr = state_old.getString(ADDR_KEY);
 		} else {
@@ -113,17 +118,19 @@ public class Thermostat extends Activity {
 				"Loading heating program"));
 		actionBar.addTab(tab);
 
-		// this should happen automatically, but nooooo....
+		// reselect the previously selected tab
 		if ((state_old != null) && (state_old.containsKey(TAB_KEY)) && (state_old.getString(TAB_KEY).equals(tab.getText().toString()))) {
 			tab.select();
 		}
 
 		// create mode spinner
 		oldMode = -1;
-		String[] modes = { "Off", "Heat", "Cool", "Auto" };
+		String[] modes = { "Off", "Heat", "Cool", "Auto", "" };
 		mode = (Spinner) findViewById(R.id.mode);
 		ArrayAdapter<String> modeAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, modes);
 		mode.setAdapter(modeAdapter);
+		// blank until it's set
+		mode.setSelection(4);
 
 		// update mode when it changes
 		mode.setOnItemSelectedListener(new OnItemSelectedListener() {
@@ -155,13 +162,16 @@ public class Thermostat extends Activity {
 		});
 
 		// load mode spinner
-		// message("Loading mode");
 		new FetchMode().execute("tstat");
 	}
 
-	// display status message
+	// display status message in a stacked fashion
 	void message(String m) {
 		status.setText(m);
+	}
+
+	void clear() {
+		status.setText("");
 	}
 
 	// squirrel away our hard-earned data when bad things happen
@@ -226,7 +236,7 @@ public class Thermostat extends Activity {
 		}
 	}
 
-	// discover a thermostat on the network using SSDP
+	// discover a thermostat on the network using Simple Service Discovery Protocol
 	// note that "onPostExecute" is useless because we call "task.get()"
 	class Discover extends AsyncTask<Void, Void, String> {
 		@Override
@@ -246,11 +256,11 @@ public class Thermostat extends Activity {
 				byte[] sendData = data.getBytes();
 				DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, dest, 1900);
 				sock = new DatagramSocket(8888);
-				// wait a maximum of 2 seconds
-				sock.setSoTimeout(2000);
 				sock.send(sendPacket);
 
 				// receive response
+				// wait a maximum of 2 seconds
+				sock.setSoTimeout(2000);
 				byte[] receiveData = new byte[4096];
 				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 				sock.receive(receivePacket);
@@ -259,7 +269,7 @@ public class Thermostat extends Activity {
 				// unlock WiFi so it can powersave
 				multicastLock.release();
 
-				// the response looks like:
+				// parse the IP address out of the response, which looks like:
 				// TYPE: WM-NOTIFY
 				// VERSION: 1.0
 				//
@@ -287,6 +297,7 @@ public class Thermostat extends Activity {
 	}
 
 	// generic class to read stuff from thermostat
+	// all the subclasses implement onPostExecute() so we don't even try
 	class ReadURL extends AsyncTask<String, Void, Void> {
 		String error = null;
 		String path;
@@ -308,7 +319,7 @@ public class Thermostat extends Activity {
 				URL url = new URL("http://" + addr + "/" + path);
 				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-				// this is just the shittiest way to read data since COBOL
+				// java is not quite as bad as COBOL or FORTRAN at reading data, but it's getting there
 				BufferedReader shit = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 				String moreShit;
 				while ((moreShit = shit.readLine()) != null) {
@@ -327,7 +338,7 @@ public class Thermostat extends Activity {
 			} finally {
 				netLock.unlock();
 			}
-			// why are Void and void different? fucking retarded!
+			// why are Void and void different? because java's design is broken
 			return null;
 		}
 	}
@@ -359,16 +370,17 @@ public class Thermostat extends Activity {
 			} finally {
 				netLock.unlock();
 			}
-			// why are Void and void different? fucking retarded!
+			// why are Void and void different? because java's design is broken
 			return null;
 		}
 
+		// display an error if we get one
 		protected void onPostExecute(Void result) {
 			if (error != null) {
 				message(error);
 				return;
 			}
-			message("");
+			clear();
 		}
 	}
 
@@ -388,14 +400,12 @@ public class Thermostat extends Activity {
 				message(e.toString());
 				return;
 			}
-			message("");
 		}
 	}
 
-	// fetch the program
+	// fetch the program for this tab from the thermostat and display it
 	class FetchProgram extends ReadURL {
 		TimeButton btn;
-		EditText et;
 		TableRow row;
 		TextView tv;
 		private TableLayout tbl;
@@ -423,34 +433,33 @@ public class Thermostat extends Activity {
 					row.addView(tv);
 
 					// create each temperature control in this row
-					JSONArray x = json.getJSONArray(ndx + "");
-					for (int i = 0; i < x.length(); i += 2) {
+					JSONArray pgm = json.getJSONArray(ndx + "");
+					for (int i = 0; i < pgm.length(); i += 2) {
 						// Warning: "getApplicationContext()" doesn't work here, you must use "Thermostat.this" or the
-						// TimePickerDialog will take a big 'ol shit - and I don't know why!
+						// TimePickerDialog will take a big 'ol crap - and I don't know why!
 						btn = new TimeButton(Thermostat.this);
-						btn.setTime(x.getInt(i));
+						btn.setTime(pgm.getInt(i));
 						btn.setText();
 						row.addView(btn);
 
-						int temp = x.getInt(i + 1);
-						et = new EditText(Thermostat.this);
-						et.setText(temp + "");
-						et.setInputType(InputType.TYPE_CLASS_PHONE);
-						row.addView(et);
+						String temp = pgm.getString(i + 1);
+						row.addView(createTemp(temp));
 					}
 					tbl.addView(row);
+					ndx++;
 				}
 			} catch (Exception e) {
 				message(e.toString());
 				return;
 			}
-			message("");
+			clear();
 		}
 	}
 
-	// write a new program and send it
+	// write a new program from the tab's controls and send it to the thermostat
 	void updateProgram(String path, TableLayout tbl) {
 		JSONObject json = new JSONObject();
+		String temp = "";
 
 		// iterate through rows in table
 		for (int i = 0; i < tbl.getChildCount(); i++) {
@@ -462,9 +471,10 @@ public class Thermostat extends Activity {
 				EditText et = (EditText) row.getChildAt(j + 1);
 				jarray.put(btn.getTime());
 				try {
-					jarray.put(Integer.parseInt(et.getText().toString()));
+					temp = et.getText().toString().trim();
+					jarray.put(Integer.parseInt(temp));
 				} catch (Exception e) {
-					message("Error: \"" + et.getText() + "\" is not a valid temperature");
+					message("Error: \"" + temp + "\" is not a valid temperature");
 					return;
 				}
 			}
@@ -481,14 +491,49 @@ public class Thermostat extends Activity {
 		new WriteURL().execute(path, json.toString());
 	}
 
+	// create & populate new temperature control
+	EditText createTemp(String temp) {
+		EditText et;
+
+		et = new EditText(this);
+		et.setText(temp);
+		et.setInputType(InputType.TYPE_CLASS_PHONE);
+		return et;
+	}
+
+	// focus new blank temperature control that's the same size as current controls
+	EditText createTemp(int width) {
+		EditText et;
+
+		et = createTemp("");
+		et.setWidth(width);
+		et.requestFocus();
+		return et;
+	}
+
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu) {
 		super.onPrepareOptionsMenu(menu);
 		menu.clear();
-		if (this.getCurrentFocus() != null) {
+		View v = this.getCurrentFocus();
+		if (v != null) {
+			// these only make sense if we have a focused control
 			menu.add(Menu.NONE, MENU_DELETE, Menu.NONE, "Delete item");
 			menu.add(Menu.NONE, MENU_ADD_BEFORE, Menu.NONE, "Insert item before");
 			menu.add(Menu.NONE, MENU_ADD_AFTER, Menu.NONE, "Insert item after");
+
+			// figure out which row this is
+			TableRow row = (TableRow) v.getParent();
+			TableLayout tbl = (TableLayout) row.getParent();
+			int i = tbl.indexOfChild(row);
+			if (i > 0) {
+				// not the first row
+				menu.add(Menu.NONE, MENU_COPY_ABOVE, Menu.NONE, "Copy row above");
+			}
+			if (i < 6) {
+				// not the last row
+				menu.add(Menu.NONE, MENU_COPY_BELOW, Menu.NONE, "Copy row below");
+			}
 		}
 		menu.add(Menu.NONE, MENU_EXIT, Menu.NONE, "Exit");
 		return true;
@@ -501,6 +546,7 @@ public class Thermostat extends Activity {
 			return true;
 		}
 
+		// do something with/to a focused control
 		View v = this.getCurrentFocus();
 		if (v == null) {
 			return true;
@@ -508,11 +554,11 @@ public class Thermostat extends Activity {
 		if (!(v instanceof EditText)) {
 			return true;
 		}
+
+		// figure out where we are in the row
 		TableRow row = (TableRow) v.getParent();
 		int i = row.indexOfChild(v);
 
-		TimeButton btn;
-		EditText et;
 		switch (item.getItemId()) {
 		case MENU_DELETE:
 			// delete current temperature control
@@ -521,23 +567,19 @@ public class Thermostat extends Activity {
 			return true;
 		case MENU_ADD_BEFORE:
 			// insert a temperature control before this one
-			et = new EditText(this);
-			et.setInputType(InputType.TYPE_CLASS_PHONE);
-			row.addView(et, i - 1);
-
-			btn = new TimeButton(this);
-			row.addView(btn, i - 1);
-
+			row.addView(createTemp(v.getMeasuredWidth()), i - 1);
+			row.addView(new TimeButton(this), i - 1);
 			return true;
 		case MENU_ADD_AFTER:
 			// insert a temperature control after this one
-			et = new EditText(this);
-			et.setInputType(InputType.TYPE_CLASS_PHONE);
-			row.addView(et, i + 1);
-
-			btn = new TimeButton(this);
-			row.addView(btn, i + 1);
-
+			row.addView(createTemp(v.getMeasuredWidth()), i + 1);
+			row.addView(new TimeButton(this), i + 1);
+			return true;
+		case MENU_COPY_ABOVE:
+			// replace this row with a copy of the row above
+			return true;
+		case MENU_COPY_BELOW:
+			// replace this row with a copy of the row below
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
