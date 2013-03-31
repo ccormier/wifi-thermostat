@@ -15,12 +15,128 @@
 			android:layout_height="wrap_content" />
 		<Spinner
 			android:id="@+id/mode"
+			android:entries="@array/modes"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content" />
 	</LinearLayout>
 	<LinearLayout
 		android:visibility="gone"
-		android:id="@+id/layout_cool"
+		android:id="@+id/layout_status"
+		android:layout_weight="1"
+		android:layout_width="fill_parent"
+		android:layout_height="0dp"
+		android:orientation="vertical">
+		<LinearLayout
+			android:gravity="center"
+			android:paddingBottom="25dp"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content">
+			<TextView
+				android:text="Time: "
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+			<TextView
+				android:id="@+id/status_time"
+				android:text="Unknown"
+				android:paddingRight="25dp"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+			<Button
+				android:id="@+id/status_time_set"
+				android:enabled="false"
+				android:text="Sync"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+		</LinearLayout>
+		<LinearLayout
+			android:gravity="center"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content">
+			<TextView
+				android:text="Temperature: "
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+			<TextView
+				android:id="@+id/status_temp"
+				android:paddingRight="25dp"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+			<TextView
+				android:text="Target: "
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+			<TextView
+				android:id="@+id/status_target"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+			<TextView
+				android:id="@+id/status_override"
+				android:text=" (Temporary)"
+				android:visibility="gone"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+		</LinearLayout>
+		<LinearLayout
+			android:gravity="center"
+			android:paddingBottom="25dp"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content">
+			<Button
+				android:id="@+id/status_incr"
+				android:enabled="false"
+				android:text="+"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+			<Button
+				android:id="@+id/status_decr"
+				android:enabled="false"
+				android:text="-"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+			<Button
+				android:id="@+id/status_set"
+				android:enabled="false"
+				android:text="Set"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+			<ToggleButton
+				android:id="@+id/status_hold"
+				android:textOn="Hold"
+				android:textOff="Hold"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+		</LinearLayout>
+		<LinearLayout
+			android:gravity="center"
+			android:paddingBottom="25dp"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content">
+			<TextView
+				android:text="Fan: "
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+			<Spinner
+				android:id="@+id/status_fan"
+				android:entries="@array/fan"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+			<ImageView
+				android:id="@+id/status_fan_icon"
+				android:visibility="gone"
+				android:src="@drawable/fan_24_white"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+		</LinearLayout>
+		<Button
+			android:id="@+id/status_refresh"
+			android:layout_gravity="center_horizontal"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="Refresh" />
+	</LinearLayout>
+	<LinearLayout
+		android:visibility="gone"
+		android:id="@+id/cool_layout"
 		android:layout_weight="1"
 		android:layout_width="fill_parent"
 		android:layout_height="0dp"
@@ -33,13 +149,13 @@
 				android:layout_height="wrap_content"
 				android:scrollbars="none">
 				<TableLayout
-					android:id="@+id/table_cool"
+					android:id="@+id/cool_table"
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content" />
 			</HorizontalScrollView>
 		</ScrollView>
 		<Button
-			android:id="@+id/update_cool"
+			android:id="@+id/cool_update"
 			android:layout_gravity="center_horizontal"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
@@ -47,7 +163,7 @@
 	</LinearLayout>
 	<LinearLayout
 		android:visibility="gone"
-		android:id="@+id/layout_heat"
+		android:id="@+id/heat_layout"
 		android:layout_weight="1"
 		android:layout_width="fill_parent"
 		android:layout_height="0dp"
@@ -60,13 +176,13 @@
 				android:layout_height="wrap_content"
 				android:scrollbars="none">
 				<TableLayout
-					android:id="@+id/table_heat"
+					android:id="@+id/heat_table"
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content" />
 			</HorizontalScrollView>
 		</ScrollView>
 		<Button
-			android:id="@+id/update_heat"
+			android:id="@+id/heat_update"
 			android:layout_gravity="center_horizontal"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"

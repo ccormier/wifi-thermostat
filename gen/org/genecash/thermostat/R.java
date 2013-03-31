@@ -8,20 +8,38 @@
 package org.genecash.thermostat;
 
 public final class R {
+    public static final class array {
+        public static final int fan=0x7f050001;
+        public static final int modes=0x7f050000;
+    }
     public static final class attr {
     }
     public static final class drawable {
-        public static final int thermostat_icon=0x7f020000;
+        public static final int fan_24_white=0x7f020000;
+        public static final int thermostat_icon=0x7f020001;
     }
     public static final class id {
-        public static final int layout_cool=0x7f050001;
-        public static final int layout_heat=0x7f050004;
-        public static final int mode=0x7f050000;
-        public static final int status=0x7f050007;
-        public static final int table_cool=0x7f050002;
-        public static final int table_heat=0x7f050005;
-        public static final int update_cool=0x7f050003;
-        public static final int update_heat=0x7f050006;
+        public static final int cool_layout=0x7f06000e;
+        public static final int cool_table=0x7f06000f;
+        public static final int cool_update=0x7f060010;
+        public static final int heat_layout=0x7f060011;
+        public static final int heat_table=0x7f060012;
+        public static final int heat_update=0x7f060013;
+        public static final int layout_status=0x7f060001;
+        public static final int mode=0x7f060000;
+        public static final int status=0x7f060014;
+        public static final int status_decr=0x7f060008;
+        public static final int status_fan=0x7f06000b;
+        public static final int status_fan_icon=0x7f06000c;
+        public static final int status_hold=0x7f06000a;
+        public static final int status_incr=0x7f060007;
+        public static final int status_override=0x7f060006;
+        public static final int status_refresh=0x7f06000d;
+        public static final int status_set=0x7f060009;
+        public static final int status_target=0x7f060005;
+        public static final int status_temp=0x7f060004;
+        public static final int status_time=0x7f060002;
+        public static final int status_time_set=0x7f060003;
     }
     public static final class layout {
         public static final int thermostat=0x7f030000;

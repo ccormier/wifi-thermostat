@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Wi-Fi Thermostat</string>
+	<string name="app_name">Wi-Fi Thermostat</string>
+	<string-array name="modes">
+		<item>Off</item>
+		<item>Heat</item>
+		<item>Cool</item>
+		<item>Auto</item>
+	</string-array>
+	<string-array name="fan">
+		<item>Auto</item>
+		<item>Circ</item>
+		<item>On</item>
+	</string-array>
 </resources>

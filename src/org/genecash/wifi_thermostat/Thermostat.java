@@ -35,14 +35,17 @@ import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 
 public class Thermostat extends Activity {
 	// Persistent preferences values
@@ -61,10 +64,28 @@ public class Thermostat extends Activity {
 	// bundle keys
 	private static final String ADDR_KEY = "addr";
 
+	// controls
 	int oldMode;
+	int oldFan;
+	double oldTarget;
+	double currentTarget;
+	boolean oldHold;
 	String addr = null;
+	String targetKey;
 	Spinner mode;
+	Spinner status_fan;
+	TextView status_time;
+	TextView status_temp;
+	TextView status_target;
+	TextView status_override;
 	TextView msg_line;
+	Button status_time_set;
+	Button status_incr;
+	Button status_decr;
+	Button status_set;
+	Button status_refresh;
+	ToggleButton status_hold;
+	ImageView status_fan_icon;
 	ActionBar actionBar = null;
 
 	// the thermostat is single-threaded, this ensures we stick to that
@@ -87,7 +108,22 @@ public class Thermostat extends Activity {
 
 		sSettings = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
 		state_old = savedInstanceState;
+
+		// find controls
+		mode = (Spinner) findViewById(R.id.mode);
 		msg_line = (TextView) findViewById(R.id.status);
+		status_time = (TextView) findViewById(R.id.status_time);
+		status_temp = (TextView) findViewById(R.id.status_temp);
+		status_target = (TextView) findViewById(R.id.status_target);
+		status_override = (TextView) findViewById(R.id.status_override);
+		status_incr = (Button) findViewById(R.id.status_incr);
+		status_decr = (Button) findViewById(R.id.status_decr);
+		status_set = (Button) findViewById(R.id.status_set);
+		status_time_set = (Button) findViewById(R.id.status_time_set);
+		status_refresh = (Button) findViewById(R.id.status_refresh);
+		status_hold = (ToggleButton) findViewById(R.id.status_hold);
+		status_fan_icon = (ImageView) findViewById(R.id.status_fan_icon);
+		status_fan = (Spinner) findViewById(R.id.status_fan);
 
 		// locate thermostat on the network
 		if ((state_old != null) && (state_old.containsKey(ADDR_KEY))) {
@@ -114,15 +150,26 @@ public class Thermostat extends Activity {
 
 		// create 1st tab
 		Tab tab = actionBar.newTab();
-		tab.setText("Cooling");
-		tab.setTabListener(new MyTabListener<Fragment>(R.id.layout_cool, R.id.update_cool, R.id.table_cool, "tstat/program/cool",
-				"Loading cooling program"));
+		tab.setText("Status");
+		tab.setTabListener(new StatusTabListener<Fragment>(R.id.layout_status));
 		actionBar.addTab(tab);
 
 		// create 2nd tab
 		tab = actionBar.newTab();
+		tab.setText("Cooling");
+		tab.setTabListener(new ProgramTabListener<Fragment>(R.id.cool_layout, R.id.cool_update, R.id.cool_table, "tstat/program/cool",
+				"Loading cooling program"));
+		actionBar.addTab(tab);
+
+		// reselect the previously selected tab
+		if (tab.getText().toString().equals(sSettings.getString(PREF_TAB, ""))) {
+			tab.select();
+		}
+
+		// create 3rd tab
+		tab = actionBar.newTab();
 		tab.setText("Heating");
-		tab.setTabListener(new MyTabListener<Fragment>(R.id.layout_heat, R.id.update_heat, R.id.table_heat, "tstat/program/heat",
+		tab.setTabListener(new ProgramTabListener<Fragment>(R.id.heat_layout, R.id.heat_update, R.id.heat_table, "tstat/program/heat",
 				"Loading heating program"));
 		actionBar.addTab(tab);
 
@@ -131,16 +178,8 @@ public class Thermostat extends Activity {
 			tab.select();
 		}
 
-		// create mode spinner
-		oldMode = -1;
-		String[] modes = { "Off", "Heat", "Cool", "Auto", "" };
-		mode = (Spinner) findViewById(R.id.mode);
-		ArrayAdapter<String> modeAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, modes);
-		mode.setAdapter(modeAdapter);
-		// blank until it's set
-		mode.setSelection(4);
-
 		// update mode when it changes
+		oldMode = -1;
 		mode.setOnItemSelectedListener(new OnItemSelectedListener() {
 			@Override
 			public void onItemSelected(AdapterView<?> arg0, View v, int position, long id) {
@@ -168,8 +207,124 @@ public class Thermostat extends Activity {
 			}
 		});
 
-		// load mode spinner
-		new FetchMode().execute("tstat", "Loading mode");
+		// button to sync thermostat time to phone
+		status_time_set.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				JSONObject json = new JSONObject();
+				JSONObject time = new JSONObject();
+				try {
+					time.put("day", cal.get(Calendar.DAY_OF_WEEK));
+					time.put("hour", cal.get(Calendar.HOUR_OF_DAY));
+					time.put("minute", cal.get(Calendar.MINUTE));
+					json.put("time", time);
+				} catch (Exception e) {
+					status(e.toString());
+					return;
+				}
+				new WriteURL().execute("tstat", json.toString(), "Setting time");
+				new FetchStatus().execute("tstat", "Loading status");
+			}
+		});
+
+		// button to increment target temperature
+		status_incr.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				changeTarget(1);
+			}
+		});
+
+		// button to decrement target temperature
+		status_decr.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				changeTarget(-1);
+			}
+		});
+
+		// button to set new temperature target
+		status_set.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				JSONObject json = new JSONObject();
+				try {
+					json.put(targetKey, currentTarget);
+				} catch (Exception e) {
+					status(e.toString());
+					return;
+				}
+				new WriteURL().execute("tstat", json.toString(), "Setting new temperature target");
+				new FetchStatus().execute("tstat", "Loading status");
+			}
+		});
+
+		// update hold when it toggles
+		oldHold = false;
+		status_hold.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				if (oldHold != isChecked) {
+					JSONObject json = new JSONObject();
+					try {
+						json.put("hold", isChecked ? 1 : 0);
+					} catch (Exception e) {
+						status(e.toString());
+						return;
+					}
+					new WriteURL().execute("tstat", json.toString(), "Setting hold mode");
+					new FetchStatus().execute("tstat", "Loading status");
+				}
+			}
+		});
+
+		// update fan when it changes
+		oldFan = -1;
+		status_fan.setOnItemSelectedListener(new OnItemSelectedListener() {
+			@Override
+			public void onItemSelected(AdapterView<?> arg0, View v, int position, long id) {
+				// if the setting hasn't actually changed, we need to ignore it
+				// the order of these "if" statements is important
+				if (oldFan == -1) {
+					oldFan = position;
+				}
+				if (position == oldFan) {
+					return;
+				}
+				oldFan = position;
+				JSONObject json = new JSONObject();
+				try {
+					json.put("fmode", status_fan.getSelectedItemPosition());
+				} catch (Exception e) {
+					status(e.toString());
+					return;
+				}
+				new WriteURL().execute("tstat", json.toString(), "Setting fan");
+				new FetchStatus().execute("tstat", "Loading status");
+			}
+
+			@Override
+			public void onNothingSelected(AdapterView<?> arg0) {
+			}
+		});
+
+		// button to refresh status tab
+		status_refresh.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				new FetchStatus().execute("tstat", "Loading status");
+			}
+		});
+
+		// load mode spinner & status page
+		new FetchStatus().execute("tstat", "Loading status");
+	}
+
+	// change target temperature display
+	void changeTarget(int dir) {
+		currentTarget += dir;
+		status_target.setText(String.format("%.0f\u00B0", currentTarget));
+		status_set.setEnabled(currentTarget != oldTarget);
 	}
 
 	// display status message
@@ -203,14 +358,14 @@ public class Thermostat extends Activity {
 	}
 
 	// this switches between the tabs, and is totally the wrong way to do it, but I didn't feel like dealing with fragments
-	class MyTabListener<T extends Fragment> implements TabListener {
+	class ProgramTabListener<T extends Fragment> implements TabListener {
 		LinearLayout mCtrl;
 		TableLayout mTbl;
 		Button mBtn;
 		String mPath;
 		String mPrompt;
 
-		public MyTabListener(int ctrl, int btn, int tbl, String path, String prompt) {
+		public ProgramTabListener(int ctrl, int btn, int tbl, String path, String prompt) {
 			mCtrl = (LinearLayout) findViewById(ctrl);
 			mTbl = (TableLayout) findViewById(tbl);
 			mBtn = (Button) findViewById(btn);
@@ -233,18 +388,43 @@ public class Thermostat extends Activity {
 			});
 		}
 
+		// hide unselected tab
+		public void onTabUnselected(Tab tab, FragmentTransaction ft) {
+			mCtrl.setVisibility(View.GONE);
+		}
+
+		// reload if necessary
+		public void onTabReselected(Tab tab, FragmentTransaction ft) {
+			onTabSelected(tab, ft);
+		}
+	}
+
+	class StatusTabListener<T extends Fragment> implements TabListener {
+		LinearLayout mCtrl;
+		TableLayout mTbl;
+		Button mBtn;
+		String mPath;
+		String mPrompt;
+
+		public StatusTabListener(int ctrl) {
+			mCtrl = (LinearLayout) findViewById(ctrl);
+		}
+
+		public void onTabSelected(Tab tab, FragmentTransaction ft) {
+			mCtrl.setVisibility(View.VISIBLE);
+		}
+
+		// hide unselected tab
 		public void onTabUnselected(Tab tab, FragmentTransaction ft) {
 			mCtrl.setVisibility(View.GONE);
 		}
 
 		public void onTabReselected(Tab tab, FragmentTransaction ft) {
-			// reload if necessary
-			onTabSelected(tab, ft);
 		}
 	}
 
 	// discover a thermostat on the network using Simple Service Discovery Protocol
-	// note that "onPostExecute" is useless because we call "task.get()"
+	// note that "onPostExecute" is not used because we call "task.get()"
 	class Discover extends AsyncTask<Void, Void, String> {
 		@Override
 		protected String doInBackground(Void... params) {
@@ -252,7 +432,7 @@ public class Thermostat extends Activity {
 
 			netLock.lock();
 			try {
-				// lock WiFi on so we don't miss the multicast response
+				// lock Wi-Fi on so we don't miss the multicast response
 				WifiManager wm = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 				WifiManager.MulticastLock multicastLock = wm.createMulticastLock("mylock");
 				multicastLock.acquire();
@@ -273,7 +453,7 @@ public class Thermostat extends Activity {
 				sock.receive(receivePacket);
 				String resp = new String(receivePacket.getData());
 
-				// unlock WiFi so it can powersave
+				// unlock Wi-Fi so it can powersave
 				multicastLock.release();
 
 				// parse the IP address out of the response, which looks like:
@@ -310,7 +490,7 @@ public class Thermostat extends Activity {
 		String error = null;
 		String path;
 		JSONObject json = null;
-		StringBuilder bagOfShit = new StringBuilder();
+		StringBuilder data = new StringBuilder();
 
 		@Override
 		protected Void doInBackground(String... params) {
@@ -329,10 +509,10 @@ public class Thermostat extends Activity {
 				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
 				// java is not quite as bad as COBOL or FORTRAN at reading data, but it's getting there
-				BufferedReader shit = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-				String moreShit;
-				while ((moreShit = shit.readLine()) != null) {
-					bagOfShit.append(moreShit + "\n");
+				BufferedReader output = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+				String line;
+				while ((line = output.readLine()) != null) {
+					data.append(line + "\n");
 				}
 
 				int resp = conn.getResponseCode();
@@ -340,7 +520,7 @@ public class Thermostat extends Activity {
 					error = "HTTP response: " + resp;
 					return null;
 				}
-				json = new JSONObject(bagOfShit.toString());
+				json = new JSONObject(data.toString());
 				conn.disconnect();
 			} catch (Exception e) {
 				error = e.toString();
@@ -407,7 +587,7 @@ public class Thermostat extends Activity {
 	}
 
 	// set thermostat mode spinner
-	class FetchMode extends ReadURL {
+	class FetchStatus extends ReadURL {
 		@Override
 		protected void onPostExecute(Void result) {
 			setProgressBarIndeterminateVisibility(false);
@@ -419,6 +599,70 @@ public class Thermostat extends Activity {
 				// this will set the spinner, ignore that change
 				oldMode = json.getInt("tmode");
 				mode.setSelection(oldMode);
+
+				// current time
+				if (json.has("time")) {
+					JSONObject time = json.getJSONObject("time");
+					int hour = time.getInt("hour");
+					String ampm = "am";
+					if (hour > 12) {
+						hour -= 12;
+						ampm = "pm";
+					}
+					status_time.setText(String.format("%s %d:%02d %s", days[time.getInt("day")], hour, time.getInt("minute"), ampm));
+					status_time_set.setEnabled(true);
+				}
+
+				// current temperature
+				if (json.has("temp")) {
+					status_temp.setText(String.format("%.1f\u00B0", json.getDouble("temp")));
+				}
+
+				// target temperature
+				Double target = null;
+				if (json.has("t_cool")) {
+					target = Double.valueOf(json.getDouble("t_cool"));
+					targetKey = "t_cool";
+				}
+				if (json.has("t_heat")) {
+					target = Double.valueOf(json.getDouble("t_heat"));
+					targetKey = "t_heat";
+				}
+				if (target != null) {
+					status_target.setText(String.format("%.0f\u00B0", target));
+					status_incr.setEnabled(true);
+					status_decr.setEnabled(true);
+				}
+				oldTarget = target;
+				currentTarget = target;
+				status_set.setEnabled(false);
+
+				// show override flag
+				if (json.has("override")) {
+					if (json.getInt("override") == 0) {
+						status_override.setVisibility(View.GONE);
+					} else {
+						status_override.setVisibility(View.VISIBLE);
+					}
+				}
+
+				// hold mode
+				if (json.has("hold")) {
+					oldHold = (json.getInt("hold") != 0);
+					status_hold.setChecked(oldHold);
+				}
+
+				// fan
+				if (json.has("fmode")) {
+					status_fan.setSelection(json.getInt("fmode"));
+				}
+				if (json.has("fstate")) {
+					if (json.getInt("fstate") == 0) {
+						status_fan_icon.setVisibility(View.GONE);
+					} else {
+						status_fan_icon.setVisibility(View.VISIBLE);
+					}
+				}
 			} catch (Exception e) {
 				status(e.toString());
 				return;
@@ -445,9 +689,9 @@ public class Thermostat extends Activity {
 			state_new.put(path, json);
 			try {
 				if (path.endsWith("cool")) {
-					tbl = (TableLayout) findViewById(R.id.table_cool);
+					tbl = (TableLayout) findViewById(R.id.cool_table);
 				} else {
-					tbl = (TableLayout) findViewById(R.id.table_heat);
+					tbl = (TableLayout) findViewById(R.id.heat_table);
 				}
 				// create each row
 				int ndx = 0;
@@ -497,7 +741,7 @@ public class Thermostat extends Activity {
 				jarray.put(btn.getTime());
 				try {
 					temp = et.getText().toString().trim();
-					jarray.put(Integer.parseInt(temp));
+					jarray.put(Double.parseDouble(temp));
 				} catch (Exception e) {
 					status("Error: \"" + temp + "\" is not a valid temperature");
 					return;
@@ -564,7 +808,7 @@ public class Thermostat extends Activity {
 				menu.add(Menu.NONE, MENU_COPY_BELOW, Menu.NONE, "Copy row below");
 			}
 		}
-		menu.add(Menu.NONE, MENU_REFRESH, Menu.NONE, "Refresh");
+		menu.add(Menu.NONE, MENU_REFRESH, Menu.NONE, "Refresh Programs");
 		return true;
 	}
 
@@ -576,14 +820,11 @@ public class Thermostat extends Activity {
 		if (choice == MENU_REFRESH) {
 			// delete old controls
 			TableLayout tbl;
-			tbl = (TableLayout) findViewById(R.id.table_cool);
+			tbl = (TableLayout) findViewById(R.id.cool_table);
 			tbl.removeViews(0, tbl.getChildCount());
-			tbl = (TableLayout) findViewById(R.id.table_heat);
+			tbl = (TableLayout) findViewById(R.id.heat_table);
 			tbl.removeViews(0, tbl.getChildCount());
 			state_old = null;
-
-			// reload mode spinner
-			new FetchMode().execute("tstat", "Loading mode");
 
 			// reload tab
 			actionBar.selectTab(actionBar.getSelectedTab());
