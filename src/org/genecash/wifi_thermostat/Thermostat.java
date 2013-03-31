@@ -28,7 +28,9 @@ import android.content.SharedPreferences;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.InputType;
+import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -39,6 +41,7 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
@@ -80,8 +83,8 @@ public class Thermostat extends Activity {
 	TextView status_override;
 	TextView msg_line;
 	Button status_time_set;
-	Button status_incr;
-	Button status_decr;
+	ImageButton status_incr;
+	ImageButton status_decr;
 	Button status_set;
 	Button status_refresh;
 	ToggleButton status_hold;
@@ -116,8 +119,8 @@ public class Thermostat extends Activity {
 		status_temp = (TextView) findViewById(R.id.status_temp);
 		status_target = (TextView) findViewById(R.id.status_target);
 		status_override = (TextView) findViewById(R.id.status_override);
-		status_incr = (Button) findViewById(R.id.status_incr);
-		status_decr = (Button) findViewById(R.id.status_decr);
+		status_incr = (ImageButton) findViewById(R.id.status_incr);
+		status_decr = (ImageButton) findViewById(R.id.status_decr);
 		status_set = (Button) findViewById(R.id.status_set);
 		status_time_set = (Button) findViewById(R.id.status_time_set);
 		status_refresh = (Button) findViewById(R.id.status_refresh);
@@ -711,7 +714,7 @@ public class Thermostat extends Activity {
 						btn.setText();
 						row.addView(btn);
 
-						String temp = pgm.getString(i + 1);
+						double temp = pgm.getDouble(i + 1);
 						row.addView(createTemp(temp));
 					}
 					tbl.addView(row);
@@ -761,13 +764,52 @@ public class Thermostat extends Activity {
 	}
 
 	// create & populate new temperature control
+	EditText createTemp(double temp) {
+		return createTemp(String.format("%.1f", temp));
+	}
+
 	EditText createTemp(String temp) {
 		EditText et;
 
 		et = new EditText(this);
 		et.setText(temp);
 		et.setInputType(InputType.TYPE_CLASS_PHONE);
+		et.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+			}
+
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+			}
+
+			// use * and # (or - and +) as decrement/increment keys
+			@Override
+			public void afterTextChanged(Editable s) {
+				if (s.toString().contains("-")) {
+					createTempHelper("-", -0.5, s);
+				}
+				if (s.toString().contains("*")) {
+					createTempHelper("*", -0.5, s);
+				}
+				if (s.toString().contains("+")) {
+					createTempHelper("+", 0.5, s);
+				}
+				if (s.toString().contains("#")) {
+					createTempHelper("#", 0.5, s);
+				}
+			}
+		});
 		return et;
+	}
+
+	// help increment/decrement a value
+	void createTempHelper(String c, double dir, Editable s) {
+		String str = s.toString().replace(c, "");
+		double num = Double.parseDouble(str);
+		num = num + dir;
+		s.clear();
+		s.append(num + "");
 	}
 
 	// focus new blank temperature control that's the same size as current controls

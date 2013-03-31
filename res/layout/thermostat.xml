@@ -81,29 +81,33 @@
 			android:paddingBottom="25dp"
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content">
-			<Button
+			<ImageButton
 				android:id="@+id/status_incr"
 				android:enabled="false"
-				android:text="+"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content" />
-			<Button
+				android:src="@android:drawable/arrow_up_float"
+				android:layout_weight="1"
+				android:layout_width="fill_parent"
+				android:layout_height="fill_parent" />
+			<ImageButton
 				android:id="@+id/status_decr"
 				android:enabled="false"
-				android:text="-"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content" />
+				android:src="@android:drawable/arrow_down_float"
+				android:layout_weight="1"
+				android:layout_width="fill_parent"
+				android:layout_height="fill_parent" />
 			<Button
 				android:id="@+id/status_set"
 				android:enabled="false"
 				android:text="Set"
-				android:layout_width="wrap_content"
+				android:layout_weight="1"
+				android:layout_width="fill_parent"
 				android:layout_height="wrap_content" />
 			<ToggleButton
 				android:id="@+id/status_hold"
 				android:textOn="Hold"
 				android:textOff="Hold"
-				android:layout_width="wrap_content"
+				android:layout_weight="1"
+				android:layout_width="fill_parent"
 				android:layout_height="wrap_content" />
 		</LinearLayout>
 		<LinearLayout
