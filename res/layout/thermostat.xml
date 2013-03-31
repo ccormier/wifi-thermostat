@@ -4,6 +4,7 @@
 	android:layout_width="fill_parent"
 	android:layout_height="fill_parent"
 	android:orientation="vertical">
+	<!-- mode -->
 	<LinearLayout
 		android:layout_gravity="center_horizontal"
 		android:layout_width="wrap_content"
@@ -19,6 +20,8 @@
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content" />
 	</LinearLayout>
+	<!-- start of status page -->
+	<!-- time -->
 	<LinearLayout
 		android:visibility="gone"
 		android:id="@+id/layout_status"
@@ -48,6 +51,7 @@
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content" />
 		</LinearLayout>
+		<!-- current/target temperature -->
 		<LinearLayout
 			android:gravity="center"
 			android:layout_width="fill_parent"
@@ -76,6 +80,7 @@
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content" />
 		</LinearLayout>
+		<!-- temperature buttons -->
 		<LinearLayout
 			android:gravity="center"
 			android:paddingBottom="25dp"
@@ -85,31 +90,30 @@
 				android:id="@+id/status_incr"
 				android:enabled="false"
 				android:src="@android:drawable/arrow_up_float"
-				android:layout_weight="1"
-				android:layout_width="fill_parent"
+				android:layout_width="wrap_content"
 				android:layout_height="fill_parent" />
 			<ImageButton
 				android:id="@+id/status_decr"
 				android:enabled="false"
 				android:src="@android:drawable/arrow_down_float"
-				android:layout_weight="1"
-				android:layout_width="fill_parent"
+				android:layout_width="wrap_content"
 				android:layout_height="fill_parent" />
 			<Button
 				android:id="@+id/status_set"
 				android:enabled="false"
 				android:text="Set"
-				android:layout_weight="1"
-				android:layout_width="fill_parent"
+				android:layout_marginLeft="20dp"
+				android:layout_marginRight="20dp"
+				android:layout_width="wrap_content"
 				android:layout_height="wrap_content" />
 			<ToggleButton
 				android:id="@+id/status_hold"
 				android:textOn="Hold"
 				android:textOff="Hold"
-				android:layout_weight="1"
-				android:layout_width="fill_parent"
+				android:layout_width="wrap_content"
 				android:layout_height="wrap_content" />
 		</LinearLayout>
+		<!-- fan -->
 		<LinearLayout
 			android:gravity="center"
 			android:paddingBottom="25dp"
@@ -131,6 +135,7 @@
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content" />
 		</LinearLayout>
+		<!-- status page refresh -->
 		<Button
 			android:id="@+id/status_refresh"
 			android:layout_gravity="center_horizontal"
@@ -138,6 +143,7 @@
 			android:layout_height="wrap_content"
 			android:text="Refresh" />
 	</LinearLayout>
+	<!-- start of cooling program page -->
 	<LinearLayout
 		android:visibility="gone"
 		android:id="@+id/cool_layout"
@@ -152,12 +158,14 @@
 				android:layout_width="fill_parent"
 				android:layout_height="wrap_content"
 				android:scrollbars="none">
+				<!-- data table -->
 				<TableLayout
 					android:id="@+id/cool_table"
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content" />
 			</HorizontalScrollView>
 		</ScrollView>
+		<!-- update program button -->
 		<Button
 			android:id="@+id/cool_update"
 			android:layout_gravity="center_horizontal"
@@ -165,6 +173,7 @@
 			android:layout_height="wrap_content"
 			android:text="Update" />
 	</LinearLayout>
+	<!-- start of heating program page -->
 	<LinearLayout
 		android:visibility="gone"
 		android:id="@+id/heat_layout"
@@ -179,12 +188,14 @@
 				android:layout_width="fill_parent"
 				android:layout_height="wrap_content"
 				android:scrollbars="none">
+				<!-- data table -->
 				<TableLayout
 					android:id="@+id/heat_table"
 					android:layout_width="wrap_content"
 					android:layout_height="wrap_content" />
 			</HorizontalScrollView>
 		</ScrollView>
+		<!-- update program button -->
 		<Button
 			android:id="@+id/heat_update"
 			android:layout_gravity="center_horizontal"

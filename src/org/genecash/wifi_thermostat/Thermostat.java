@@ -714,7 +714,7 @@ public class Thermostat extends Activity {
 						btn.setText();
 						row.addView(btn);
 
-						double temp = pgm.getDouble(i + 1);
+						String temp = pgm.getString(i + 1);
 						row.addView(createTemp(temp));
 					}
 					tbl.addView(row);
@@ -744,7 +744,7 @@ public class Thermostat extends Activity {
 				jarray.put(btn.getTime());
 				try {
 					temp = et.getText().toString().trim();
-					jarray.put(Double.parseDouble(temp));
+					jarray.put(Integer.parseInt(temp));
 				} catch (Exception e) {
 					status("Error: \"" + temp + "\" is not a valid temperature");
 					return;
@@ -764,15 +764,11 @@ public class Thermostat extends Activity {
 	}
 
 	// create & populate new temperature control
-	EditText createTemp(double temp) {
-		return createTemp(String.format("%.1f", temp));
-	}
-
 	EditText createTemp(String temp) {
 		EditText et;
 
 		et = new EditText(this);
-		et.setText(temp);
+		et.setText(" " + temp);
 		et.setInputType(InputType.TYPE_CLASS_PHONE);
 		et.addTextChangedListener(new TextWatcher() {
 			@Override
@@ -787,16 +783,16 @@ public class Thermostat extends Activity {
 			@Override
 			public void afterTextChanged(Editable s) {
 				if (s.toString().contains("-")) {
-					createTempHelper("-", -0.5, s);
+					createTempHelper("-", -1, s);
 				}
 				if (s.toString().contains("*")) {
-					createTempHelper("*", -0.5, s);
+					createTempHelper("*", -1, s);
 				}
 				if (s.toString().contains("+")) {
-					createTempHelper("+", 0.5, s);
+					createTempHelper("+", 1, s);
 				}
 				if (s.toString().contains("#")) {
-					createTempHelper("#", 0.5, s);
+					createTempHelper("#", 1, s);
 				}
 			}
 		});
@@ -804,9 +800,9 @@ public class Thermostat extends Activity {
 	}
 
 	// help increment/decrement a value
-	void createTempHelper(String c, double dir, Editable s) {
+	void createTempHelper(String c, int dir, Editable s) {
 		String str = s.toString().replace(c, "");
-		double num = Double.parseDouble(str);
+		int num = Integer.parseInt(str);
 		num = num + dir;
 		s.clear();
 		s.append(num + "");
@@ -850,7 +846,7 @@ public class Thermostat extends Activity {
 				menu.add(Menu.NONE, MENU_COPY_BELOW, Menu.NONE, "Copy row below");
 			}
 		}
-		menu.add(Menu.NONE, MENU_REFRESH, Menu.NONE, "Refresh Programs");
+		menu.add(Menu.NONE, MENU_REFRESH, Menu.NONE, "Refresh programs");
 		return true;
 	}
 
