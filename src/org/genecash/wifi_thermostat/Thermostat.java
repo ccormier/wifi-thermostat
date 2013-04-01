@@ -70,9 +70,9 @@ public class Thermostat extends Activity {
 	// controls
 	int oldMode;
 	int oldFan;
+	boolean oldHold;
 	double oldTarget;
 	double currentTarget;
-	boolean oldHold;
 	String addr = null;
 	String targetKey;
 	Spinner mode;
@@ -203,6 +203,7 @@ public class Thermostat extends Activity {
 					return;
 				}
 				new WriteURL().execute("tstat", json.toString(), "Setting mode");
+				new FetchStatus().execute("tstat", "Loading status");
 			}
 
 			@Override
@@ -635,9 +636,16 @@ public class Thermostat extends Activity {
 					status_target.setText(String.format("%.0f\u00B0", target));
 					status_incr.setEnabled(true);
 					status_decr.setEnabled(true);
+					status_hold.setEnabled(true);
+					oldTarget = target;
+					currentTarget = target;
+				} else {
+					status_target.setText("(None)");
+					status_incr.setEnabled(false);
+					status_decr.setEnabled(false);
+					status_set.setEnabled(false);
+					status_hold.setEnabled(false);
 				}
-				oldTarget = target;
-				currentTarget = target;
 				status_set.setEnabled(false);
 
 				// show override flag
