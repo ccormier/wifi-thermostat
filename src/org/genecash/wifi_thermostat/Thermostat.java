@@ -199,7 +199,7 @@ public class Thermostat extends Activity {
 				try {
 					json.put("tmode", mode.getSelectedItemPosition());
 				} catch (Exception e) {
-					status(e.toString());
+					status(e);
 					return;
 				}
 				new WriteURL().execute("tstat", json.toString(), "Setting mode");
@@ -223,7 +223,7 @@ public class Thermostat extends Activity {
 					time.put("minute", cal.get(Calendar.MINUTE));
 					json.put("time", time);
 				} catch (Exception e) {
-					status(e.toString());
+					status(e);
 					return;
 				}
 				new WriteURL().execute("tstat", json.toString(), "Setting time");
@@ -255,7 +255,7 @@ public class Thermostat extends Activity {
 				try {
 					json.put(targetKey, currentTarget);
 				} catch (Exception e) {
-					status(e.toString());
+					status(e);
 					return;
 				}
 				new WriteURL().execute("tstat", json.toString(), "Setting new temperature target");
@@ -273,7 +273,7 @@ public class Thermostat extends Activity {
 					try {
 						json.put("hold", isChecked ? 1 : 0);
 					} catch (Exception e) {
-						status(e.toString());
+						status(e);
 						return;
 					}
 					new WriteURL().execute("tstat", json.toString(), "Setting hold mode");
@@ -300,7 +300,7 @@ public class Thermostat extends Activity {
 				try {
 					json.put("fmode", status_fan.getSelectedItemPosition());
 				} catch (Exception e) {
-					status(e.toString());
+					status(e);
 					return;
 				}
 				new WriteURL().execute("tstat", json.toString(), "Setting fan");
@@ -324,22 +324,6 @@ public class Thermostat extends Activity {
 		new FetchStatus().execute("tstat", "Loading status");
 	}
 
-	// change target temperature display
-	void changeTarget(int dir) {
-		currentTarget += dir;
-		status_target.setText(String.format("%.0f\u00B0", currentTarget));
-		status_set.setEnabled(currentTarget != oldTarget);
-	}
-
-	// display status message
-	void status(String m) {
-		if (m == null) {
-			msg_line.setText("");
-		} else {
-			msg_line.setText(m);
-		}
-	}
-
 	// squirrel away our hard-earned data when bad things happen
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
@@ -359,6 +343,134 @@ public class Thermostat extends Activity {
 			editor.putString(PREF_TAB, actionBar.getSelectedTab().getText().toString());
 			editor.commit();
 		}
+	}
+
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		super.onPrepareOptionsMenu(menu);
+		menu.clear();
+		View v = this.getCurrentFocus();
+		// these only make sense if we have a focused control
+		if ((v != null) && (v instanceof EditText)) {
+			// figure out which row this is
+			TableRow row = (TableRow) v.getParent();
+			if (row.getChildCount() > 3) {
+				// should not be able to delete only control
+				menu.add(Menu.NONE, MENU_DELETE, Menu.NONE, "Delete item");
+			}
+			menu.add(Menu.NONE, MENU_ADD_BEFORE, Menu.NONE, "Insert item before");
+			menu.add(Menu.NONE, MENU_ADD_AFTER, Menu.NONE, "Insert item after");
+
+			// figure out where we are in the row
+			TableLayout tbl = (TableLayout) row.getParent();
+			int i = tbl.indexOfChild(row);
+			if (i > 0) {
+				// not the first row
+				menu.add(Menu.NONE, MENU_COPY_ABOVE, Menu.NONE, "Copy row above");
+			}
+			if (i < 6) {
+				// not the last row
+				menu.add(Menu.NONE, MENU_COPY_BELOW, Menu.NONE, "Copy row below");
+			}
+		}
+		menu.add(Menu.NONE, MENU_REFRESH, Menu.NONE, "Refresh programs");
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		int choice = item.getItemId();
+
+		// delete old controls and refetch data
+		if (choice == MENU_REFRESH) {
+			// delete old controls
+			TableLayout tbl;
+			tbl = (TableLayout) findViewById(R.id.cool_table);
+			tbl.removeViews(0, tbl.getChildCount());
+			tbl = (TableLayout) findViewById(R.id.heat_table);
+			tbl.removeViews(0, tbl.getChildCount());
+			state_old = null;
+
+			// reload tab
+			actionBar.selectTab(actionBar.getSelectedTab());
+			return true;
+		}
+
+		// do something with/to a focused control
+		View v = this.getCurrentFocus();
+		if (v == null) {
+			return true;
+		}
+		if (!(v instanceof EditText)) {
+			return true;
+		}
+
+		// figure out where we are in the row
+		TableRow row = (TableRow) v.getParent();
+		int i = row.indexOfChild(v);
+
+		// delete current temperature control
+		if (choice == MENU_DELETE) {
+			row.removeView(v);
+			row.removeViewAt(i - 1);
+
+			// fix focus
+			if (i > row.getChildCount()) {
+				i = row.getChildCount() - 1;
+			}
+			row.getChildAt(i).requestFocus();
+			return true;
+		}
+
+		// add control before or after this one
+		if ((choice == MENU_ADD_BEFORE) || (choice == MENU_ADD_AFTER)) {
+			if (choice == MENU_ADD_BEFORE) {
+				i--;
+			} else {
+				i++;
+			}
+			row.addView(createTemp(v.getMeasuredWidth()), i);
+			row.addView(new TimeButton(this), i);
+			return true;
+		}
+
+		// replace this row with a copy of the row above or below
+		if ((choice == MENU_COPY_ABOVE) || (choice == MENU_COPY_BELOW)) {
+			// find our current row
+			TableLayout tbl = (TableLayout) row.getParent();
+			int j = tbl.indexOfChild(row);
+
+			// remove current controls
+			row.removeViews(1, row.getChildCount() - 1);
+
+			// find source sibling row
+			TableRow src;
+			if (choice == MENU_COPY_ABOVE) {
+				src = (TableRow) tbl.getChildAt(j - 1);
+			} else {
+				src = (TableRow) tbl.getChildAt(j + 1);
+			}
+
+			// copy controls
+			for (int k = 1; k < src.getChildCount(); k += 2) {
+				TimeButton btn_src = (TimeButton) src.getChildAt(k);
+				TimeButton btn_dst = new TimeButton(Thermostat.this);
+				btn_dst.setTime(btn_src.getTime());
+				btn_dst.setText();
+				row.addView(btn_dst);
+
+				EditText et_src = (EditText) src.getChildAt(k + 1);
+				row.addView(createTemp(et_src.getText().toString()));
+			}
+
+			// fix focus
+			if (i > row.getChildCount()) {
+				i = row.getChildCount() - 1;
+			}
+			row.getChildAt(i).requestFocus();
+			return true;
+		}
+		return super.onOptionsItemSelected(item);
 	}
 
 	// this switches between the tabs, and is totally the wrong way to do it, but I didn't feel like dealing with fragments
@@ -586,7 +698,7 @@ public class Thermostat extends Activity {
 				status(error);
 				return;
 			}
-			status(null);
+			status("");
 		}
 	}
 
@@ -675,10 +787,10 @@ public class Thermostat extends Activity {
 					}
 				}
 			} catch (Exception e) {
-				status(e.toString());
+				status(e);
 				return;
 			}
-			status(null);
+			status("");
 		}
 	}
 
@@ -729,10 +841,10 @@ public class Thermostat extends Activity {
 					ndx++;
 				}
 			} catch (Exception e) {
-				status(e.toString());
+				status(e);
 				return;
 			}
-			status(null);
+			status("");
 		}
 	}
 
@@ -761,7 +873,7 @@ public class Thermostat extends Activity {
 			try {
 				json.put(i + "", jarray);
 			} catch (Exception e) {
-				status(e.toString());
+				status(e);
 				return;
 			}
 		}
@@ -826,131 +938,24 @@ public class Thermostat extends Activity {
 		return et;
 	}
 
-	@Override
-	public boolean onPrepareOptionsMenu(Menu menu) {
-		super.onPrepareOptionsMenu(menu);
-		menu.clear();
-		View v = this.getCurrentFocus();
-		// these only make sense if we have a focused control
-		if ((v != null) && (v instanceof EditText)) {
-			// figure out which row this is
-			TableRow row = (TableRow) v.getParent();
-			if (row.getChildCount() > 3) {
-				// should not be able to delete only control
-				menu.add(Menu.NONE, MENU_DELETE, Menu.NONE, "Delete item");
-			}
-			menu.add(Menu.NONE, MENU_ADD_BEFORE, Menu.NONE, "Insert item before");
-			menu.add(Menu.NONE, MENU_ADD_AFTER, Menu.NONE, "Insert item after");
-
-			// figure out where we are in the row
-			TableLayout tbl = (TableLayout) row.getParent();
-			int i = tbl.indexOfChild(row);
-			if (i > 0) {
-				// not the first row
-				menu.add(Menu.NONE, MENU_COPY_ABOVE, Menu.NONE, "Copy row above");
-			}
-			if (i < 6) {
-				// not the last row
-				menu.add(Menu.NONE, MENU_COPY_BELOW, Menu.NONE, "Copy row below");
-			}
-		}
-		menu.add(Menu.NONE, MENU_REFRESH, Menu.NONE, "Refresh programs");
-		return true;
+	// change target temperature display
+	void changeTarget(int dir) {
+		currentTarget += dir;
+		status_target.setText(String.format("%.0f\u00B0", currentTarget));
+		status_set.setEnabled(currentTarget != oldTarget);
 	}
 
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		int choice = item.getItemId();
+	// display status message
+	void status(String m) {
+		msg_line.setText(m);
+	}
 
-		// delete old controls and refetch data
-		if (choice == MENU_REFRESH) {
-			// delete old controls
-			TableLayout tbl;
-			tbl = (TableLayout) findViewById(R.id.cool_table);
-			tbl.removeViews(0, tbl.getChildCount());
-			tbl = (TableLayout) findViewById(R.id.heat_table);
-			tbl.removeViews(0, tbl.getChildCount());
-			state_old = null;
-
-			// reload tab
-			actionBar.selectTab(actionBar.getSelectedTab());
-			return true;
-		}
-
-		// do something with/to a focused control
-		View v = this.getCurrentFocus();
-		if (v == null) {
-			return true;
-		}
-		if (!(v instanceof EditText)) {
-			return true;
-		}
-
-		// figure out where we are in the row
-		TableRow row = (TableRow) v.getParent();
-		int i = row.indexOfChild(v);
-
-		// delete current temperature control
-		if (choice == MENU_DELETE) {
-			row.removeView(v);
-			row.removeViewAt(i - 1);
-
-			// fix focus
-			if (i > row.getChildCount()) {
-				i = row.getChildCount() - 1;
-			}
-			row.getChildAt(i).requestFocus();
-			return true;
-		}
-
-		// add control before or after this one
-		if ((choice == MENU_ADD_BEFORE) || (choice == MENU_ADD_AFTER)) {
-			if (choice == MENU_ADD_BEFORE) {
-				i--;
-			} else {
-				i++;
-			}
-			row.addView(createTemp(v.getMeasuredWidth()), i);
-			row.addView(new TimeButton(this), i);
-			return true;
-		}
-
-		// replace this row with a copy of the row above or below
-		if ((choice == MENU_COPY_ABOVE) || (choice == MENU_COPY_BELOW)) {
-			// find our current row
-			TableLayout tbl = (TableLayout) row.getParent();
-			int j = tbl.indexOfChild(row);
-
-			// remove current controls
-			row.removeViews(1, row.getChildCount() - 1);
-
-			// find source sibling row
-			TableRow src;
-			if (choice == MENU_COPY_ABOVE) {
-				src = (TableRow) tbl.getChildAt(j - 1);
-			} else {
-				src = (TableRow) tbl.getChildAt(j + 1);
-			}
-
-			// copy controls
-			for (int k = 1; k < src.getChildCount(); k += 2) {
-				TimeButton btn_src = (TimeButton) src.getChildAt(k);
-				TimeButton btn_dst = new TimeButton(Thermostat.this);
-				btn_dst.setTime(btn_src.getTime());
-				btn_dst.setText();
-				row.addView(btn_dst);
-
-				EditText et_src = (EditText) src.getChildAt(k + 1);
-				row.addView(createTemp(et_src.getText().toString()));
-			}
-
-			// fix focus
-			if (i > row.getChildCount()) {
-				i = row.getChildCount() - 1;
-			}
-			row.getChildAt(i).requestFocus();
-			return true;
-		}
-		return super.onOptionsItemSelected(item);
+	// report errors
+	void status(Exception e) {
+		StackTraceElement[] st = e.getStackTrace();
+		String where = st[0].toString();
+		String pkg = this.getClass().getPackage().getName();
+		where = where.replace(pkg + ".", "");
+		msg_line.setText("Error: " + e + "\n" + where);
 	}
 }
