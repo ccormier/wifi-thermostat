@@ -51,7 +51,7 @@ import android.widget.TextView;
 import android.widget.ToggleButton;
 
 public class Thermostat extends Activity {
-	// Persistent preferences values
+	// persistent preferences values
 	private static SharedPreferences sSettings;
 	private static final String PREFS_NAME = "SpendItPrefs";
 	protected static final String PREF_TAB = "Tab";
@@ -91,7 +91,9 @@ public class Thermostat extends Activity {
 	ImageView status_fan_icon;
 	ActionBar actionBar = null;
 
-	// the thermostat is single-threaded, this ensures we stick to that
+	/**
+	 * The thermostat is single-threaded, this ensures we stick to that
+	 */
 	final ReentrantLock netLock = new ReentrantLock();
 
 	// old and new control states
@@ -320,7 +322,7 @@ public class Thermostat extends Activity {
 			}
 		});
 
-		// load mode spinner & status page
+		// initial load of mode spinner & status page
 		new FetchStatus().execute("tstat", "Loading status");
 	}
 
@@ -349,8 +351,14 @@ public class Thermostat extends Activity {
 	public boolean onPrepareOptionsMenu(Menu menu) {
 		super.onPrepareOptionsMenu(menu);
 		menu.clear();
-		View v = this.getCurrentFocus();
+
+		// no thermostat, so punt
+		if (addr == null) {
+			return true;
+		}
+
 		// these only make sense if we have a focused control
+		View v = this.getCurrentFocus();
 		if ((v != null) && (v instanceof EditText)) {
 			// figure out which row this is
 			TableRow row = (TableRow) v.getParent();
@@ -473,7 +481,7 @@ public class Thermostat extends Activity {
 		return super.onOptionsItemSelected(item);
 	}
 
-	// this switches between the tabs, and is totally the wrong way to do it, but I didn't feel like dealing with fragments
+	// handle the heating/cooling tabs, and is totally the wrong way to do it, but I didn't feel like dealing with fragments
 	class ProgramTabListener<T extends Fragment> implements TabListener {
 		LinearLayout mCtrl;
 		TableLayout mTbl;
@@ -515,6 +523,7 @@ public class Thermostat extends Activity {
 		}
 	}
 
+	// handle the status tab
 	class StatusTabListener<T extends Fragment> implements TabListener {
 		LinearLayout mCtrl;
 		TableLayout mTbl;
@@ -600,7 +609,7 @@ public class Thermostat extends Activity {
 	}
 
 	// generic class to read stuff from thermostat
-	// takes 2 arguments: URL path, and status message
+	// takes 2 arguments: URL path, and status message to be displayed while running
 	// all the subclasses implement onPostExecute() so we don't even try
 	class ReadURL extends AsyncTask<String, String, Void> {
 		String error = null;
@@ -643,7 +652,6 @@ public class Thermostat extends Activity {
 			} finally {
 				netLock.unlock();
 			}
-			// why are Void and void different? because java's design is broken
 			return null;
 		}
 
@@ -655,7 +663,7 @@ public class Thermostat extends Activity {
 	}
 
 	// generic class to write stuff to thermostat
-	// takes 3 arguments: URL path, data string, and status message
+	// takes 3 arguments: URL path, data string, and status message to be displayed while running
 	class WriteURL extends AsyncTask<String, String, Void> {
 		String error = null;
 
@@ -683,10 +691,10 @@ public class Thermostat extends Activity {
 			} finally {
 				netLock.unlock();
 			}
-			// why are Void and void different? because java's design is broken
 			return null;
 		}
 
+		// the action usually happens so fast that we don't put up a progress indicator
 		@Override
 		protected void onProgressUpdate(String... values) {
 			status(values[0]);
@@ -702,7 +710,7 @@ public class Thermostat extends Activity {
 		}
 	}
 
-	// set thermostat mode spinner
+	// set up status tab
 	class FetchStatus extends ReadURL {
 		@Override
 		protected void onPostExecute(Void result) {
@@ -903,24 +911,24 @@ public class Thermostat extends Activity {
 			@Override
 			public void afterTextChanged(Editable s) {
 				if (s.toString().contains("-")) {
-					createTempHelper("-", -1, s);
+					changeTemp("-", -1, s);
 				}
 				if (s.toString().contains("*")) {
-					createTempHelper("*", -1, s);
+					changeTemp("*", -1, s);
 				}
 				if (s.toString().contains("+")) {
-					createTempHelper("+", 1, s);
+					changeTemp("+", 1, s);
 				}
 				if (s.toString().contains("#")) {
-					createTempHelper("#", 1, s);
+					changeTemp("#", 1, s);
 				}
 			}
 		});
 		return et;
 	}
 
-	// help increment/decrement a value
-	void createTempHelper(String c, int dir, Editable s) {
+	// increment/decrement a program temperature value
+	void changeTemp(String c, int dir, Editable s) {
 		String str = s.toString().replace(c, "");
 		int num = Integer.parseInt(str);
 		num = num + dir;
@@ -928,7 +936,7 @@ public class Thermostat extends Activity {
 		s.append(num + "");
 	}
 
-	// focus new blank temperature control that's the same size as current controls
+	// focus new blank program temperature control that's the same size as current controls
 	EditText createTemp(int width) {
 		EditText et;
 
@@ -938,7 +946,7 @@ public class Thermostat extends Activity {
 		return et;
 	}
 
-	// change target temperature display
+	// increment/decrement target temperature display
 	void changeTarget(int dir) {
 		currentTarget += dir;
 		status_target.setText(String.format("%.0f\u00B0", currentTarget));
