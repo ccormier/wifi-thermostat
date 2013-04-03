@@ -318,6 +318,7 @@ public class Thermostat extends Activity {
 		status_refresh.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
+				state_new.remove("tstat");
 				new FetchStatus().execute("tstat", "Loading status");
 			}
 		});
@@ -719,6 +720,7 @@ public class Thermostat extends Activity {
 				status(error);
 				return;
 			}
+			state_new.put(path, json);
 			try {
 				// this will set the spinner, ignore that change
 				oldMode = json.getInt("tmode");
