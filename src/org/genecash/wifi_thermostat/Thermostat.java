@@ -318,7 +318,9 @@ public class Thermostat extends Activity {
 		status_refresh.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				state_new.remove("tstat");
+				if (state_old != null) {
+					state_old.remove("tstat");
+				}
 				new FetchStatus().execute("tstat", "Loading status");
 			}
 		});
@@ -670,6 +672,10 @@ public class Thermostat extends Activity {
 
 		@Override
 		protected Void doInBackground(String... params) {
+			if (state_old != null) {
+				// remove stale value from cache
+				state_old.remove(params[0]);
+			}
 			netLock.lock();
 			try {
 				publishProgress(params[2]);
