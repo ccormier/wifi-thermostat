@@ -77,17 +77,19 @@ public class Thermostat extends Activity {
 	String targetKey;
 	Spinner mode;
 	Spinner status_fan;
+	TextView status_addr;
 	TextView status_time;
 	TextView status_temp;
 	TextView status_target;
 	TextView status_override;
 	TextView msg_line;
 	Button status_time_set;
-	ImageButton status_incr;
-	ImageButton status_decr;
-	Button status_set;
+	ImageButton status_temp_incr;
+	ImageButton status_temp_decr;
+	Button status_temp_set;
 	Button status_refresh;
-	ToggleButton status_hold;
+	Button status_rescan;
+	ToggleButton status_temp_hold;
 	ImageView status_fan_icon;
 	ActionBar actionBar = null;
 
@@ -117,16 +119,18 @@ public class Thermostat extends Activity {
 		// find controls
 		mode = (Spinner) findViewById(R.id.mode);
 		msg_line = (TextView) findViewById(R.id.status);
+		status_addr = (TextView) findViewById(R.id.status_addr);
 		status_time = (TextView) findViewById(R.id.status_time);
 		status_temp = (TextView) findViewById(R.id.status_temp);
 		status_target = (TextView) findViewById(R.id.status_target);
 		status_override = (TextView) findViewById(R.id.status_override);
-		status_incr = (ImageButton) findViewById(R.id.status_incr);
-		status_decr = (ImageButton) findViewById(R.id.status_decr);
-		status_set = (Button) findViewById(R.id.status_set);
+		status_temp_incr = (ImageButton) findViewById(R.id.status_temp_incr);
+		status_temp_decr = (ImageButton) findViewById(R.id.status_temp_decr);
+		status_temp_set = (Button) findViewById(R.id.status_temp_set);
 		status_time_set = (Button) findViewById(R.id.status_time_set);
+		status_rescan = (Button) findViewById(R.id.status_rescan);
 		status_refresh = (Button) findViewById(R.id.status_refresh);
-		status_hold = (ToggleButton) findViewById(R.id.status_hold);
+		status_temp_hold = (ToggleButton) findViewById(R.id.status_temp_hold);
 		status_fan_icon = (ImageView) findViewById(R.id.status_fan_icon);
 		status_fan = (Spinner) findViewById(R.id.status_fan);
 
@@ -213,6 +217,27 @@ public class Thermostat extends Activity {
 			}
 		});
 
+		// button to rescan for thermostat address
+		status_rescan.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				AsyncTask<Void, Void, String> task = new Discover().execute();
+				try {
+					// wait for it to finish and fetch the result
+					addr = task.get();
+				} catch (Exception e) {
+					addr = "*Thermostat not found\n\n" + e;
+				}
+				if (addr.startsWith("*")) {
+					// we got an error looking for the thermostat, display it and bail
+					status(addr.substring(1));
+					addr = null;
+				} else {
+					status_addr.setText(addr);
+				}
+			}
+		});
+
 		// button to sync thermostat time to phone
 		status_time_set.setOnClickListener(new View.OnClickListener() {
 			@Override
@@ -234,7 +259,7 @@ public class Thermostat extends Activity {
 		});
 
 		// button to increment target temperature
-		status_incr.setOnClickListener(new View.OnClickListener() {
+		status_temp_incr.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				changeTarget(1);
@@ -242,7 +267,7 @@ public class Thermostat extends Activity {
 		});
 
 		// button to decrement target temperature
-		status_decr.setOnClickListener(new View.OnClickListener() {
+		status_temp_decr.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				changeTarget(-1);
@@ -250,7 +275,7 @@ public class Thermostat extends Activity {
 		});
 
 		// button to set new temperature target
-		status_set.setOnClickListener(new View.OnClickListener() {
+		status_temp_set.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				JSONObject json = new JSONObject();
@@ -267,7 +292,7 @@ public class Thermostat extends Activity {
 
 		// update hold when it toggles
 		oldHold = false;
-		status_hold.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+		status_temp_hold.setOnCheckedChangeListener(new OnCheckedChangeListener() {
 			@Override
 			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 				if (oldHold != isChecked) {
@@ -732,6 +757,9 @@ public class Thermostat extends Activity {
 				oldMode = json.getInt("tmode");
 				mode.setSelection(oldMode);
 
+				// IP address
+				status_addr.setText(addr);
+
 				// current time
 				if (json.has("time")) {
 					JSONObject time = json.getJSONObject("time");
@@ -762,19 +790,19 @@ public class Thermostat extends Activity {
 				}
 				if (target != null) {
 					status_target.setText(String.format("%.0f\u00B0", target));
-					status_incr.setEnabled(true);
-					status_decr.setEnabled(true);
-					status_hold.setEnabled(true);
+					status_temp_incr.setEnabled(true);
+					status_temp_decr.setEnabled(true);
+					status_temp_hold.setEnabled(true);
 					oldTarget = target;
 					currentTarget = target;
 				} else {
 					status_target.setText("(None)");
-					status_incr.setEnabled(false);
-					status_decr.setEnabled(false);
-					status_set.setEnabled(false);
-					status_hold.setEnabled(false);
+					status_temp_incr.setEnabled(false);
+					status_temp_decr.setEnabled(false);
+					status_temp_set.setEnabled(false);
+					status_temp_hold.setEnabled(false);
 				}
-				status_set.setEnabled(false);
+				status_temp_set.setEnabled(false);
 
 				// show override flag
 				if (json.has("override")) {
@@ -788,7 +816,7 @@ public class Thermostat extends Activity {
 				// hold mode
 				if (json.has("hold")) {
 					oldHold = (json.getInt("hold") != 0);
-					status_hold.setChecked(oldHold);
+					status_temp_hold.setChecked(oldHold);
 				}
 
 				// fan
@@ -958,7 +986,7 @@ public class Thermostat extends Activity {
 	void changeTarget(int dir) {
 		currentTarget += dir;
 		status_target.setText(String.format("%.0f\u00B0", currentTarget));
-		status_set.setEnabled(currentTarget != oldTarget);
+		status_temp_set.setEnabled(currentTarget != oldTarget);
 	}
 
 	// display status message

@@ -21,7 +21,6 @@
 			android:layout_height="wrap_content" />
 	</LinearLayout>
 	<!-- start of status page -->
-	<!-- time -->
 	<LinearLayout
 		android:visibility="gone"
 		android:id="@+id/layout_status"
@@ -29,9 +28,32 @@
 		android:layout_width="fill_parent"
 		android:layout_height="0dp"
 		android:orientation="vertical">
+		<!-- IP address -->
 		<LinearLayout
 			android:gravity="center"
-			android:paddingBottom="25dp"
+			android:paddingBottom="15dp"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content">
+			<TextView
+				android:text="IP Address: "
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+			<TextView
+				android:id="@+id/status_addr"
+				android:text="Unknown"
+				android:paddingRight="25dp"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+			<Button
+				android:id="@+id/status_rescan"
+				android:text="Rescan"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+		</LinearLayout>
+		<!-- time -->
+		<LinearLayout
+			android:gravity="center"
+			android:paddingBottom="15dp"
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content">
 			<TextView
@@ -51,7 +73,7 @@
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content" />
 		</LinearLayout>
-		<!-- current/target temperature -->
+				<!-- current/target temperature -->
 		<LinearLayout
 			android:gravity="center"
 			android:layout_width="fill_parent"
@@ -83,23 +105,23 @@
 		<!-- temperature buttons -->
 		<LinearLayout
 			android:gravity="center"
-			android:paddingBottom="25dp"
+			android:paddingBottom="15dp"
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content">
 			<ImageButton
-				android:id="@+id/status_incr"
+				android:id="@+id/status_temp_incr"
 				android:enabled="false"
 				android:src="@drawable/up"
 				android:layout_width="wrap_content"
 				android:layout_height="fill_parent" />
 			<ImageButton
-				android:id="@+id/status_decr"
+				android:id="@+id/status_temp_decr"
 				android:enabled="false"
 				android:src="@drawable/down"
 				android:layout_width="wrap_content"
 				android:layout_height="fill_parent" />
 			<Button
-				android:id="@+id/status_set"
+				android:id="@+id/status_temp_set"
 				android:enabled="false"
 				android:text="Set"
 				android:layout_marginLeft="20dp"
@@ -107,7 +129,7 @@
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content" />
 			<ToggleButton
-				android:id="@+id/status_hold"
+				android:id="@+id/status_temp_hold"
 				android:enabled="false"
 				android:textOn="Hold"
 				android:textOff="Hold"
@@ -117,7 +139,7 @@
 		<!-- fan -->
 		<LinearLayout
 			android:gravity="center"
-			android:paddingBottom="25dp"
+			android:paddingBottom="15dp"
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content">
 			<TextView
