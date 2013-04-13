@@ -81,6 +81,7 @@ public class Thermostat extends Activity {
 	TextView status_time;
 	TextView status_temp;
 	TextView status_target;
+	TextView status_state;
 	TextView status_override;
 	TextView msg_line;
 	Button status_time_set;
@@ -123,6 +124,7 @@ public class Thermostat extends Activity {
 		status_time = (TextView) findViewById(R.id.status_time);
 		status_temp = (TextView) findViewById(R.id.status_temp);
 		status_target = (TextView) findViewById(R.id.status_target);
+		status_state = (TextView) findViewById(R.id.status_state);
 		status_override = (TextView) findViewById(R.id.status_override);
 		status_temp_incr = (ImageButton) findViewById(R.id.status_temp_incr);
 		status_temp_decr = (ImageButton) findViewById(R.id.status_temp_decr);
@@ -765,6 +767,9 @@ public class Thermostat extends Activity {
 					JSONObject time = json.getJSONObject("time");
 					int hour = time.getInt("hour");
 					String ampm = "am";
+					if (hour == 0) {
+						hour = 12;
+					}
 					if (hour > 12) {
 						hour -= 12;
 						ampm = "pm";
@@ -828,6 +833,21 @@ public class Thermostat extends Activity {
 						status_fan_icon.setVisibility(View.GONE);
 					} else {
 						status_fan_icon.setVisibility(View.VISIBLE);
+					}
+				}
+
+				// current state
+				if (json.has("tstate")) {
+					switch (json.getInt("tstate")) {
+					case 0:
+						status_state.setText("Off");
+						break;
+					case 1:
+						status_state.setText("Heat");
+						break;
+					case 2:
+						status_state.setText("Cool");
+						break;
 					}
 				}
 			} catch (Exception e) {
