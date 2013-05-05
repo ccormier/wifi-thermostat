@@ -52,8 +52,8 @@ import android.widget.ToggleButton;
 
 public class Thermostat extends Activity {
 	// persistent preferences values
-	private static SharedPreferences sSettings;
-	private static final String PREFS_NAME = "SpendItPrefs";
+	private SharedPreferences sSettings;
+	private static final String PREFS_NAME = "ThermostatPrefs";
 	protected static final String PREF_TAB = "Tab";
 
 	// menu constants
@@ -984,12 +984,18 @@ public class Thermostat extends Activity {
 	}
 
 	// increment/decrement a program temperature value
-	void changeTemp(String c, int dir, Editable s) {
-		String str = s.toString().replace(c, "");
-		int num = Integer.parseInt(str);
+	void changeTemp(String c, int dir, Editable ctrl) {
+		int num;
+		String str = ctrl.toString().replace(c, "").trim();
+		try {
+			num = Integer.parseInt(str);
+		} catch (Exception e) {
+			status("Error: \"" + str + "\" is not a valid temperature");
+			return;
+		}
 		num = num + dir;
-		s.clear();
-		s.append(num + "");
+		ctrl.clear();
+		ctrl.append(num + "");
 	}
 
 	// focus new blank program temperature control that's the same size as current controls
