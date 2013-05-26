@@ -2,8 +2,8 @@
 <manifest
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	package="org.genecash.thermostat"
-	android:versionCode="1367787388"
-	android:versionName="May 05 04:56:28 PM 2013">
+	android:versionCode="1369528423"
+	android:versionName="May 25 08:33:43 PM 2013">
 	<uses-sdk
 		android:minSdkVersion="15"
 		android:targetSdkVersion="17" />

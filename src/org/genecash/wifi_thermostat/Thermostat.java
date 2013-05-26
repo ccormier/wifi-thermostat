@@ -151,7 +151,6 @@ public class Thermostat extends Activity {
 				// we got an error looking for the thermostat, display it and bail
 				status(addr.substring(1));
 				addr = null;
-				return;
 			}
 		}
 
@@ -173,7 +172,7 @@ public class Thermostat extends Activity {
 		actionBar.addTab(tab);
 
 		// reselect the previously selected tab
-		if (tab.getText().toString().equals(sSettings.getString(PREF_TAB, ""))) {
+		if (addr != null && tab.getText().toString().equals(sSettings.getString(PREF_TAB, ""))) {
 			tab.select();
 		}
 
@@ -185,7 +184,7 @@ public class Thermostat extends Activity {
 		actionBar.addTab(tab);
 
 		// reselect the previously selected tab
-		if (tab.getText().toString().equals(sSettings.getString(PREF_TAB, ""))) {
+		if (addr != null && tab.getText().toString().equals(sSettings.getString(PREF_TAB, ""))) {
 			tab.select();
 		}
 
@@ -353,7 +352,9 @@ public class Thermostat extends Activity {
 		});
 
 		// initial load of mode spinner & status page
-		new FetchStatus().execute("tstat", "Loading status");
+		if (addr != null) {
+			new FetchStatus().execute("tstat", "Loading status");
+		}
 	}
 
 	// squirrel away our hard-earned data when bad things happen
