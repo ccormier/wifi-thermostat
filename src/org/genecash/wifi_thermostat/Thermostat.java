@@ -210,7 +210,6 @@ public class Thermostat extends Activity {
 					return;
 				}
 				new WriteURL().execute("tstat", json.toString(), "Setting mode");
-				new FetchStatus().execute("tstat", "Loading status");
 			}
 
 			@Override
@@ -255,7 +254,6 @@ public class Thermostat extends Activity {
 					return;
 				}
 				new WriteURL().execute("tstat", json.toString(), "Setting time");
-				new FetchStatus().execute("tstat", "Loading status");
 			}
 		});
 
@@ -287,7 +285,6 @@ public class Thermostat extends Activity {
 					return;
 				}
 				new WriteURL().execute("tstat", json.toString(), "Setting new temperature target");
-				new FetchStatus().execute("tstat", "Loading status");
 			}
 		});
 
@@ -305,7 +302,6 @@ public class Thermostat extends Activity {
 						return;
 					}
 					new WriteURL().execute("tstat", json.toString(), "Setting hold mode");
-					new FetchStatus().execute("tstat", "Loading status");
 				}
 			}
 		});
@@ -332,7 +328,6 @@ public class Thermostat extends Activity {
 					return;
 				}
 				new WriteURL().execute("tstat", json.toString(), "Setting fan");
-				new FetchStatus().execute("tstat", "Loading status");
 			}
 
 			@Override
@@ -741,7 +736,10 @@ public class Thermostat extends Activity {
 				status(error);
 				return;
 			}
+			// it's very much happier if we hold off for a bit
+			pause(500);
 			status("");
+			new FetchStatus().execute("tstat", "Loading status");
 		}
 	}
 
@@ -1014,6 +1012,15 @@ public class Thermostat extends Activity {
 		currentTarget += dir;
 		status_target.setText(String.format("%.0f\u00B0", currentTarget));
 		status_temp_set.setEnabled(currentTarget != oldTarget);
+	}
+
+	// sleep
+	void pause(long ms) {
+		try {
+			Thread.sleep(ms);
+		} catch (InterruptedException e) {
+			status(e);
+		}
 	}
 
 	// display status message
