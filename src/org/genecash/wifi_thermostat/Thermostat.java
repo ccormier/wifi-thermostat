@@ -21,9 +21,11 @@ import android.app.ActionBar;
 import android.app.ActionBar.Tab;
 import android.app.ActionBar.TabListener;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
@@ -31,6 +33,7 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -63,6 +66,9 @@ public class Thermostat extends Activity {
 	private static final int MENU_COPY_ABOVE = 3;
 	private static final int MENU_COPY_BELOW = 4;
 	private static final int MENU_REFRESH = 5;
+	private static final int MENU_RESCAN = 6;
+	private static final int MENU_SETADDRESS = 7;
+	private static final int MENU_SYNCTIME = 8;
 
 	// bundle keys
 	private static final String ADDR_KEY = "addr";
@@ -84,12 +90,10 @@ public class Thermostat extends Activity {
 	TextView status_state;
 	TextView status_override;
 	TextView msg_line;
-	Button status_time_set;
 	ImageButton status_temp_incr;
 	ImageButton status_temp_decr;
 	Button status_temp_set;
 	Button status_refresh;
-	Button status_rescan;
 	ToggleButton status_temp_hold;
 	ImageView status_fan_icon;
 	ActionBar actionBar = null;
@@ -129,16 +133,14 @@ public class Thermostat extends Activity {
 		status_temp_incr = (ImageButton) findViewById(R.id.status_temp_incr);
 		status_temp_decr = (ImageButton) findViewById(R.id.status_temp_decr);
 		status_temp_set = (Button) findViewById(R.id.status_temp_set);
-		status_time_set = (Button) findViewById(R.id.status_time_set);
-		status_rescan = (Button) findViewById(R.id.status_rescan);
 		status_refresh = (Button) findViewById(R.id.status_refresh);
 		status_temp_hold = (ToggleButton) findViewById(R.id.status_temp_hold);
 		status_fan_icon = (ImageView) findViewById(R.id.status_fan_icon);
 		status_fan = (Spinner) findViewById(R.id.status_fan);
 
 		// locate thermostat on the network
-		if ((state_old != null) && (state_old.containsKey(ADDR_KEY))) {
-			addr = state_old.getString(ADDR_KEY);
+		if (sSettings.contains(ADDR_KEY)) {
+			addr = sSettings.getString(ADDR_KEY, "Unknown");
 		} else {
 			AsyncTask<Void, Void, String> task = new Discover().execute();
 			try {
@@ -214,46 +216,6 @@ public class Thermostat extends Activity {
 
 			@Override
 			public void onNothingSelected(AdapterView<?> arg0) {
-			}
-		});
-
-		// button to rescan for thermostat address
-		status_rescan.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				AsyncTask<Void, Void, String> task = new Discover().execute();
-				try {
-					// wait for it to finish and fetch the result
-					addr = task.get();
-				} catch (Exception e) {
-					addr = "*Thermostat not found\n\n" + e;
-				}
-				if (addr.startsWith("*")) {
-					// we got an error looking for the thermostat, display it and bail
-					status(addr.substring(1));
-					addr = null;
-				} else {
-					status_addr.setText(addr);
-				}
-			}
-		});
-
-		// button to sync thermostat time to phone
-		status_time_set.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				JSONObject json = new JSONObject();
-				JSONObject time = new JSONObject();
-				try {
-					time.put("day", cal.get(Calendar.DAY_OF_WEEK));
-					time.put("hour", cal.get(Calendar.HOUR_OF_DAY));
-					time.put("minute", cal.get(Calendar.MINUTE));
-					json.put("time", time);
-				} catch (Exception e) {
-					status(e);
-					return;
-				}
-				new WriteURL().execute("tstat", json.toString(), "Setting time");
 			}
 		});
 
@@ -356,10 +318,11 @@ public class Thermostat extends Activity {
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
+		SharedPreferences.Editor editor = getSharedPreferences(PREFS_NAME, 0).edit();
 
-		// save thermostat address
+		// save thermostat address as a preference so it stays around
 		if (addr != null) {
-			outState.putString(ADDR_KEY, addr);
+			editor.putString(ADDR_KEY, addr);
 		}
 		// save cooling/heating programs
 		for (String s : state_new.keySet()) {
@@ -367,21 +330,15 @@ public class Thermostat extends Activity {
 		}
 		// save currently selected tab as a preference so it stays around
 		if (actionBar != null) {
-			SharedPreferences.Editor editor = getSharedPreferences(PREFS_NAME, 0).edit();
 			editor.putString(PREF_TAB, actionBar.getSelectedTab().getText().toString());
-			editor.commit();
 		}
+		editor.commit();
 	}
 
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu) {
 		super.onPrepareOptionsMenu(menu);
 		menu.clear();
-
-		// no thermostat, so punt
-		if (addr == null) {
-			return true;
-		}
 
 		// these only make sense if we have a focused control
 		View v = this.getCurrentFocus();
@@ -407,6 +364,9 @@ public class Thermostat extends Activity {
 				menu.add(Menu.NONE, MENU_COPY_BELOW, Menu.NONE, "Copy row below");
 			}
 		}
+		menu.add(Menu.NONE, MENU_RESCAN, Menu.NONE, "Rescan for thermostat IP address");
+		menu.add(Menu.NONE, MENU_SETADDRESS, Menu.NONE, "Input thermostat IP address");
+		menu.add(Menu.NONE, MENU_SYNCTIME, Menu.NONE, "Sync thermostat time to phone");
 		menu.add(Menu.NONE, MENU_REFRESH, Menu.NONE, "Refresh programs");
 		return true;
 	}
@@ -428,6 +388,69 @@ public class Thermostat extends Activity {
 			// reload tab
 			actionBar.selectTab(actionBar.getSelectedTab());
 			return true;
+		}
+
+		// sync thermostat time to phone
+		if (choice == MENU_SYNCTIME) {
+			JSONObject json = new JSONObject();
+			JSONObject time = new JSONObject();
+			try {
+				time.put("day", cal.get(Calendar.DAY_OF_WEEK));
+				time.put("hour", cal.get(Calendar.HOUR_OF_DAY));
+				time.put("minute", cal.get(Calendar.MINUTE));
+				json.put("time", time);
+			} catch (Exception e) {
+				status(e);
+				return true;
+			}
+			new WriteURL().execute("tstat", json.toString(), "Setting time");
+			return true;
+		}
+
+		// rescan for thermostat IP address
+		if (choice == MENU_RESCAN) {
+			AsyncTask<Void, Void, String> task = new Discover().execute();
+			try {
+				// wait for it to finish and fetch the result
+				addr = task.get();
+			} catch (Exception e) {
+				addr = "*Thermostat not found\n\n" + e;
+			}
+			if (addr.startsWith("*")) {
+				// we got an error looking for the thermostat, display it and bail
+				status(addr.substring(1));
+				addr = null;
+			} else {
+				status_addr.setText(addr);
+				new FetchStatus().execute("tstat", "Loading status");
+			}
+		}
+
+		// have user enter thermostat network address
+		if (choice == MENU_SETADDRESS) {
+			AlertDialog.Builder builder = new AlertDialog.Builder(Thermostat.this);
+			builder.setTitle("Enter dotted IP address or DNS name");
+			LayoutInflater inflater = Thermostat.this.getLayoutInflater();
+			View view = inflater.inflate(R.layout.address, null);
+			builder.setView(view);
+			final EditText et = (EditText) view.findViewById(R.id.address);
+			et.setText(addr);
+			builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int id) {
+					// since it could be any local DNS name, there's not much we can do to validate the entry
+					// we have to trust the user here
+					addr = et.getText().toString().trim();
+					status_addr.setText(addr);
+					new FetchStatus().execute("tstat", "Loading status");
+				}
+			});
+			builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int id) {
+					dialog.cancel();
+				}
+			});
+			AlertDialog alert = builder.create();
+			alert.show();
 		}
 
 		// do something with/to a focused control
@@ -774,7 +797,6 @@ public class Thermostat extends Activity {
 						ampm = "pm";
 					}
 					status_time.setText(String.format("%s %d:%02d %s", days[time.getInt("day")], hour, time.getInt("minute"), ampm));
-					status_time_set.setEnabled(true);
 				}
 
 				// current temperature

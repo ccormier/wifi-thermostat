@@ -44,11 +44,6 @@
 				android:paddingRight="25dp"
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content" />
-			<Button
-				android:id="@+id/status_rescan"
-				android:text="Rescan"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content" />
 		</LinearLayout>
 		<!-- time -->
 		<LinearLayout
@@ -64,12 +59,6 @@
 				android:id="@+id/status_time"
 				android:text="Unknown"
 				android:paddingRight="25dp"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content" />
-			<Button
-				android:id="@+id/status_time_set"
-				android:enabled="false"
-				android:text="Sync"
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content" />
 		</LinearLayout>
