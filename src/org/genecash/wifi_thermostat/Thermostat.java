@@ -38,6 +38,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.Button;
@@ -94,6 +95,10 @@ public class Thermostat extends Activity {
 	ImageButton status_temp_decr;
 	Button status_temp_set;
 	Button status_refresh;
+	Button cur_down;
+	Button cur_up;
+	Button cur_left;
+	Button cur_right;
 	ToggleButton status_temp_hold;
 	ImageView status_fan_icon;
 	ActionBar actionBar = null;
@@ -137,6 +142,10 @@ public class Thermostat extends Activity {
 		status_temp_hold = (ToggleButton) findViewById(R.id.status_temp_hold);
 		status_fan_icon = (ImageView) findViewById(R.id.status_fan_icon);
 		status_fan = (Spinner) findViewById(R.id.status_fan);
+		cur_down = (Button) findViewById(R.id.cur_down);
+		cur_up = (Button) findViewById(R.id.cur_up);
+		cur_left = (Button) findViewById(R.id.cur_left);
+		cur_right = (Button) findViewById(R.id.cur_right);
 
 		// locate thermostat on the network
 		if (sSettings.contains(ADDR_KEY)) {
@@ -169,7 +178,7 @@ public class Thermostat extends Activity {
 		// create 2nd tab
 		tab = actionBar.newTab();
 		tab.setText("Cooling");
-		tab.setTabListener(new ProgramTabListener<Fragment>(R.id.cool_layout, R.id.cool_update, R.id.cool_table, "tstat/program/cool",
+		tab.setTabListener(new ProgramTabListener<Fragment>(R.id.cool_layout, R.id.cool_table, "tstat/program/cool",
 				"Loading cooling program"));
 		actionBar.addTab(tab);
 
@@ -181,7 +190,7 @@ public class Thermostat extends Activity {
 		// create 3rd tab
 		tab = actionBar.newTab();
 		tab.setText("Heating");
-		tab.setTabListener(new ProgramTabListener<Fragment>(R.id.heat_layout, R.id.heat_update, R.id.heat_table, "tstat/program/heat",
+		tab.setTabListener(new ProgramTabListener<Fragment>(R.id.heat_layout, R.id.heat_table, "tstat/program/heat",
 				"Loading heating program"));
 		actionBar.addTab(tab);
 
@@ -308,6 +317,38 @@ public class Thermostat extends Activity {
 			}
 		});
 
+		// move cursor down to next program control
+		cur_down.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				move(View.FOCUS_DOWN, 0);
+			}
+		});
+
+		// move cursor up to next program control
+		cur_up.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				move(View.FOCUS_UP, 0);
+			}
+		});
+
+		// move cursor left, to next program control if necessary
+		cur_left.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				move(View.FOCUS_LEFT, -1);
+			}
+		});
+
+		// move cursor right, to next program control if necessary
+		cur_right.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				move(View.FOCUS_RIGHT, 1);
+			}
+		});
+
 		// initial load of mode spinner & status page
 		if (addr != null) {
 			new FetchStatus().execute("tstat", "Loading status");
@@ -341,7 +382,7 @@ public class Thermostat extends Activity {
 		menu.clear();
 
 		// these only make sense if we have a focused control
-		View v = this.getCurrentFocus();
+		View v = getCurrentFocus();
 		if ((v != null) && (v instanceof EditText)) {
 			// figure out which row this is
 			TableRow row = (TableRow) v.getParent();
@@ -430,7 +471,7 @@ public class Thermostat extends Activity {
 		if (choice == MENU_SETADDRESS) {
 			AlertDialog.Builder builder = new AlertDialog.Builder(Thermostat.this);
 			builder.setTitle("Enter dotted IP address or DNS name");
-			LayoutInflater inflater = Thermostat.this.getLayoutInflater();
+			LayoutInflater inflater = getLayoutInflater();
 			View view = inflater.inflate(R.layout.address, null);
 			builder.setView(view);
 			final EditText et = (EditText) view.findViewById(R.id.address);
@@ -454,7 +495,7 @@ public class Thermostat extends Activity {
 		}
 
 		// do something with/to a focused control
-		View v = this.getCurrentFocus();
+		View v = getCurrentFocus();
 		if (v == null) {
 			return true;
 		}
@@ -533,27 +574,30 @@ public class Thermostat extends Activity {
 	// handle the heating/cooling tabs, and is totally the wrong way to do it, but I didn't feel like dealing with fragments
 	class ProgramTabListener<T extends Fragment> implements TabListener {
 		LinearLayout mCtrl;
+		LinearLayout mBtns;
 		TableLayout mTbl;
-		Button mBtn;
+		Button mUpd;
 		String mPath;
 		String mPrompt;
 
-		public ProgramTabListener(int ctrl, int btn, int tbl, String path, String prompt) {
+		public ProgramTabListener(int ctrl, int tbl, String path, String prompt) {
 			mCtrl = (LinearLayout) findViewById(ctrl);
 			mTbl = (TableLayout) findViewById(tbl);
-			mBtn = (Button) findViewById(btn);
+			mBtns = (LinearLayout) findViewById(R.id.controlbar);
+			mUpd = (Button) findViewById(R.id.update);
 			mPath = path;
 			mPrompt = prompt;
 		}
 
 		public void onTabSelected(Tab tab, FragmentTransaction ft) {
 			mCtrl.setVisibility(View.VISIBLE);
+			mBtns.setVisibility(View.VISIBLE);
 			if (mTbl.getChildCount() == 0) {
 				new FetchProgram().execute(mPath, mPrompt);
 			}
 
 			// set up action for update button
-			mBtn.setOnClickListener(new View.OnClickListener() {
+			mUpd.setOnClickListener(new View.OnClickListener() {
 				@Override
 				public void onClick(View v) {
 					updateProgram(mPath, mTbl);
@@ -564,6 +608,7 @@ public class Thermostat extends Activity {
 		// hide unselected tab
 		public void onTabUnselected(Tab tab, FragmentTransaction ft) {
 			mCtrl.setVisibility(View.GONE);
+			mBtns.setVisibility(View.GONE);
 		}
 
 		// reload if necessary
@@ -586,6 +631,9 @@ public class Thermostat extends Activity {
 
 		public void onTabSelected(Tab tab, FragmentTransaction ft) {
 			mCtrl.setVisibility(View.VISIBLE);
+			// hide keyboard
+			InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+			imm.hideSoftInputFromWindow(mCtrl.getWindowToken(), 0);
 		}
 
 		// hide unselected tab
@@ -1036,6 +1084,33 @@ public class Thermostat extends Activity {
 		status_temp_set.setEnabled(currentTarget != oldTarget);
 	}
 
+	// move cursor from one program temperature control to another
+	public void move(int dir, int subdir) {
+		View t = getCurrentFocus();
+		if (t == null) {
+			return;
+		}
+
+		if (t instanceof EditText) {
+			if (subdir != 0) {
+				// move cursor within field if possible
+				EditText t2 = (EditText) t;
+				int cur = t2.getSelectionStart() + subdir;
+				if (cur >= 0 && cur <= t2.getText().length()) {
+					t2.setSelection(cur);
+					return;
+				}
+			}
+			View c = t.focusSearch(dir);
+			if (c == null) {
+				return;
+			}
+			if (c instanceof EditText) {
+				c.requestFocus();
+			}
+		}
+	}
+
 	// sleep
 	void pause(long ms) {
 		try {
@@ -1054,7 +1129,7 @@ public class Thermostat extends Activity {
 	void status(Exception e) {
 		StackTraceElement[] st = e.getStackTrace();
 		String where = st[0].toString();
-		String pkg = this.getClass().getPackage().getName();
+		String pkg = getClass().getPackage().getName();
 		where = where.replace(pkg + ".", "");
 		msg_line.setText("Error: " + e + "\n" + where);
 	}

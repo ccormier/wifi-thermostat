@@ -196,13 +196,6 @@
 					android:layout_height="wrap_content" />
 			</HorizontalScrollView>
 		</ScrollView>
-		<!-- update program button -->
-		<Button
-			android:id="@+id/cool_update"
-			android:layout_gravity="center_horizontal"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:text="Update" />
 	</LinearLayout>
 	<!-- start of heating program page -->
 	<LinearLayout
@@ -227,17 +220,50 @@
 					android:layout_height="wrap_content" />
 			</HorizontalScrollView>
 		</ScrollView>
+	</LinearLayout>
+	<!-- start of program button bar -->
+	<LinearLayout
+		android:visibility="gone"
+		android:id="@+id/controlbar"
+		android:gravity="center"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content">
+		<!-- cursor down button -->
+		<Button
+			android:id="@+id/cur_down"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="\u21E9" />
+		<!-- cursor up button -->
+		<Button
+			android:id="@+id/cur_up"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="\u21E7" />
 		<!-- update program button -->
 		<Button
-			android:id="@+id/heat_update"
-			android:layout_gravity="center_horizontal"
+			android:id="@+id/update"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
 			android:text="Update" />
+		<!-- cursor left button -->
+		<Button
+			android:id="@+id/cur_left"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="\u21E6" />
+		<!-- cursor right button -->
+		<Button
+			android:id="@+id/cur_right"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="\u21E8" />
 	</LinearLayout>
+	<!-- bottom status line -->
 	<TextView
 		android:id="@+id/status"
-		android:textIsSelectable="true"
+		android:textIsSelectable="false"
+		android:focusable="false"
 		android:layout_gravity="center_horizontal"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content" />
