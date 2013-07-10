@@ -4,22 +4,6 @@
 	android:layout_width="fill_parent"
 	android:layout_height="fill_parent"
 	android:orientation="vertical">
-	<!-- mode -->
-	<LinearLayout
-		android:layout_gravity="center_horizontal"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content">
-		<TextView
-			android:text="Mode:"
-			android:layout_gravity="center_vertical"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content" />
-		<Spinner
-			android:id="@+id/mode"
-			android:entries="@array/modes"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content" />
-	</LinearLayout>
 	<!-- start of status page -->
 	<LinearLayout
 		android:visibility="gone"
@@ -28,6 +12,23 @@
 		android:layout_width="fill_parent"
 		android:layout_height="0dp"
 		android:orientation="vertical">
+		<!-- mode -->
+		<LinearLayout
+			android:layout_gravity="center_horizontal"
+			android:paddingBottom="15dp"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content">
+			<TextView
+				android:text="Mode:"
+				android:layout_gravity="center_vertical"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+			<Spinner
+				android:id="@+id/mode"
+				android:entries="@array/modes"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+		</LinearLayout>
 		<!-- IP address -->
 		<LinearLayout
 			android:gravity="center"

@@ -28,8 +28,8 @@ public final class R {
         public static final int heat_layout=0x7f060013;
         public static final int heat_table=0x7f060014;
         public static final int heat_update=0x7f060015;
-        public static final int layout_status=0x7f060002;
-        public static final int mode=0x7f060001;
+        public static final int layout_status=0x7f060001;
+        public static final int mode=0x7f060002;
         public static final int status=0x7f060016;
         public static final int status_addr=0x7f060003;
         public static final int status_fan=0x7f06000c;
