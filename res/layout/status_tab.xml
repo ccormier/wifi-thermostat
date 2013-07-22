@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <LinearLayout
+        android:id="@+id/layout_status"
+        android:layout_width="fill_parent"
+        android:layout_height="0dp"
+        android:orientation="vertical">
+        <!-- mode -->
+        <LinearLayout
+            android:layout_gravity="center_horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <TextView
+                style="@android:style/TextAppearance.Large"
+                android:text="Mode:"
+                android:layout_gravity="center_vertical"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <Spinner
+                android:id="@+id/mode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+        <!-- IP address -->
+        <LinearLayout
+            android:gravity="center"
+            android:paddingBottom="15dp"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                style="@android:style/TextAppearance.Large"
+                android:text="IP Address: "
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <TextView
+                style="@android:style/TextAppearance.Large"
+                android:id="@+id/status_addr"
+                android:text="Unknown"
+                android:paddingRight="25dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+        <!-- time -->
+        <LinearLayout
+            android:gravity="center"
+            android:paddingBottom="15dp"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                style="@android:style/TextAppearance.Large"
+                android:text="Time: "
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <TextView
+                style="@android:style/TextAppearance.Large"
+                android:id="@+id/status_time"
+                android:text="Unknown"
+                android:paddingRight="25dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+        <!-- current/target temperature -->
+        <LinearLayout
+            android:gravity="center"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                style="@android:style/TextAppearance.Large"
+                android:text="Temperature: "
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <TextView
+                style="@android:style/TextAppearance.Large"
+                android:id="@+id/status_temp"
+                android:text="Unknown"
+                android:paddingRight="25dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <TextView
+                style="@android:style/TextAppearance.Large"
+                android:text="Target: "
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <TextView
+                style="@android:style/TextAppearance.Large"
+                android:id="@+id/status_target"
+                android:text="Unknown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <TextView
+                style="@android:style/TextAppearance.Large"
+                android:id="@+id/status_override"
+                android:text=" (Temporary)"
+                android:visibility="gone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+        <!-- temperature buttons -->
+        <LinearLayout
+            android:gravity="center"
+            android:paddingBottom="15dp"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+            <Button
+                style="@android:style/TextAppearance.Large"
+                android:id="@+id/status_temp_incr"
+                android:text="\u21E7"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent" />
+            <Button
+                style="@android:style/TextAppearance.Large"
+                android:id="@+id/status_temp_decr"
+                android:text="\u21E9"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent" />
+            <Button
+                style="@android:style/TextAppearance.Large"
+                android:id="@+id/status_temp_set"
+                android:enabled="false"
+                android:text="Set"
+                android:layout_marginLeft="20dp"
+                android:layout_marginRight="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <ToggleButton
+                style="@android:style/TextAppearance.Large"
+                android:id="@+id/status_temp_hold"
+                android:textOn="Hold"
+                android:textOff="Hold"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+        <!-- fan -->
+        <LinearLayout
+            android:gravity="center"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                style="@android:style/TextAppearance.Large"
+                android:text="Fan: "
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <Spinner
+                android:id="@+id/status_fan"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <ImageView
+                style="@android:style/TextAppearance.Large"
+                android:id="@+id/status_fan_icon"
+                android:visibility="gone"
+                android:src="@drawable/fan_24_white"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+        <!-- current state -->
+        <LinearLayout
+            android:gravity="center"
+            android:paddingBottom="15dp"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                style="@android:style/TextAppearance.Large"
+                android:text="Current State: "
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <TextView
+                style="@android:style/TextAppearance.Large"
+                android:id="@+id/status_state"
+                android:text="Unknown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+        <!-- status page refresh -->
+        <Button
+            style="@android:style/TextAppearance.Large"
+            android:id="@+id/status_refresh"
+            android:layout_gravity="center_horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Refresh" />
+    </LinearLayout>
+</ScrollView>

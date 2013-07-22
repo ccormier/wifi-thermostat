@@ -15,43 +15,43 @@ public final class R {
     public static final class attr {
     }
     public static final class drawable {
-        public static final int down=0x7f020000;
-        public static final int fan_24_white=0x7f020001;
-        public static final int thermostat_icon=0x7f020002;
-        public static final int up=0x7f020003;
+        public static final int fan_24_white=0x7f020000;
+        public static final int thermostat_icon=0x7f020001;
     }
     public static final class id {
         public static final int address=0x7f060000;
-        public static final int controlbar=0x7f060014;
-        public static final int cool_layout=0x7f060010;
-        public static final int cool_table=0x7f060011;
-        public static final int cur_down=0x7f060015;
-        public static final int cur_left=0x7f060018;
-        public static final int cur_right=0x7f060019;
-        public static final int cur_up=0x7f060016;
-        public static final int heat_layout=0x7f060012;
-        public static final int heat_table=0x7f060013;
-        public static final int layout_status=0x7f060001;
-        public static final int mode=0x7f060002;
-        public static final int status=0x7f06001a;
-        public static final int status_addr=0x7f060003;
-        public static final int status_fan=0x7f06000c;
-        public static final int status_fan_icon=0x7f06000d;
-        public static final int status_override=0x7f060007;
-        public static final int status_refresh=0x7f06000f;
-        public static final int status_state=0x7f06000e;
-        public static final int status_target=0x7f060006;
-        public static final int status_temp=0x7f060005;
-        public static final int status_temp_decr=0x7f060009;
-        public static final int status_temp_hold=0x7f06000b;
-        public static final int status_temp_incr=0x7f060008;
-        public static final int status_temp_set=0x7f06000a;
-        public static final int status_time=0x7f060004;
-        public static final int update=0x7f060017;
+        public static final int container=0x7f060017;
+        public static final int controlbar=0x7f060002;
+        public static final int cur_down=0x7f060003;
+        public static final int cur_left=0x7f060006;
+        public static final int cur_right=0x7f060007;
+        public static final int cur_up=0x7f060004;
+        public static final int layout_status=0x7f060008;
+        public static final int mode=0x7f060009;
+        public static final int program_table=0x7f060001;
+        public static final int status=0x7f060018;
+        public static final int status_addr=0x7f06000a;
+        public static final int status_fan=0x7f060013;
+        public static final int status_fan_icon=0x7f060014;
+        public static final int status_override=0x7f06000e;
+        public static final int status_refresh=0x7f060016;
+        public static final int status_state=0x7f060015;
+        public static final int status_target=0x7f06000d;
+        public static final int status_temp=0x7f06000c;
+        public static final int status_temp_decr=0x7f060010;
+        public static final int status_temp_hold=0x7f060012;
+        public static final int status_temp_incr=0x7f06000f;
+        public static final int status_temp_set=0x7f060011;
+        public static final int status_time=0x7f06000b;
+        public static final int update=0x7f060005;
     }
     public static final class layout {
         public static final int address=0x7f030000;
-        public static final int thermostat=0x7f030001;
+        public static final int largespinner=0x7f030001;
+        public static final int largespinnerdropdown=0x7f030002;
+        public static final int program_tab=0x7f030003;
+        public static final int status_tab=0x7f030004;
+        public static final int thermostat=0x7f030005;
     }
     public static final class string {
         public static final int app_name=0x7f040000;

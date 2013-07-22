@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <ScrollView
+        android:layout_weight="1"
+        android:layout_width="fill_parent"
+        android:layout_height="0dip">
+        <HorizontalScrollView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+            <!-- data table -->
+            <TableLayout
+                android:id="@+id/program_table"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </HorizontalScrollView>
+    </ScrollView>
+    <!-- start of program button bar -->
+    <LinearLayout
+        android:id="@+id/controlbar"
+        android:gravity="center"
+        android:layout_weight="0"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+        <!-- cursor down button -->
+        <Button
+            android:id="@+id/cur_down"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="\u21E9" />
+        <!-- cursor up button -->
+        <Button
+            android:id="@+id/cur_up"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="\u21E7" />
+        <!-- update program button -->
+        <Button
+            android:id="@+id/update"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Update" />
+        <!-- cursor left button -->
+        <Button
+            android:id="@+id/cur_left"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="\u21E6" />
+        <!-- cursor right button -->
+        <Button
+            android:id="@+id/cur_right"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="\u21E8" />
+    </LinearLayout>
+</LinearLayout>

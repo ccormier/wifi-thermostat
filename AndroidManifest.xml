@@ -1,26 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest
-	xmlns:android="http://schemas.android.com/apk/res/android"
-	package="org.genecash.thermostat"
-	android:versionCode="1373482469"
-	android:versionName="Jul 10 02:54:29 PM 2013">
-	<uses-sdk
-		android:minSdkVersion="15"
-		android:targetSdkVersion="17" />
-	<uses-permission android:name="android.permission.INTERNET" />
-	<uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
-	<uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
-	<uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
-	<application
-		android:allowBackup="false"
-		android:icon="@drawable/thermostat_icon"
-		android:label="@string/app_name">
-		<activity
-			android:name="org.genecash.wifi_thermostat.Thermostat">
-			<intent-filter>
-				<action android:name="android.intent.action.MAIN" />
-				<category android:name="android.intent.category.LAUNCHER" />
-			</intent-filter>
-		</activity>
-	</application>
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.genecash.thermostat"
+    android:versionCode="1374452598"
+    android:versionName="Jul 21 08:23:18 PM 2013">
+    <uses-sdk
+        android:minSdkVersion="15"
+        android:targetSdkVersion="17" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <application
+        android:allowBackup="false"
+        android:icon="@drawable/thermostat_icon"
+        android:label="@string/app_name">
+        <activity android:name="org.genecash.wifi_thermostat.Thermostat">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
 </manifest>
