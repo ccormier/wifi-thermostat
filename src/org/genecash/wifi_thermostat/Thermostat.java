@@ -51,11 +51,11 @@ import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
 public class Thermostat extends Activity {
 	// persistent preferences values
-	private SharedPreferences sSettings;
 	private static final String PREFS_NAME = "ThermostatPrefs";
 	protected static final String PREF_TAB = "Tab";
 
@@ -72,6 +72,10 @@ public class Thermostat extends Activity {
 
 	// bundle keys
 	private static final String ADDR_KEY = "addr";
+	private static final String TIME_KEY = "time";
+
+	// reload status page if it's older than this many milliseconds (5 minutes)
+	static final int STATUS_TIMEOUT = 5 * 60 * 1000;
 
 	// controls
 	static boolean oldHold;
@@ -115,6 +119,9 @@ public class Thermostat extends Activity {
 	static Bundle state_old;
 	final static HashMap<String, JSONObject> state_new = new HashMap<String, JSONObject>();
 
+	// last time the status page was displayed
+	long statusDisplay;
+
 	SimpleDateFormat prettyFormat = new SimpleDateFormat("hh:mm a", Locale.US);
 	Calendar cal = prettyFormat.getCalendar();
 	// no clue how to get these in a localized manner, so I hardcoded them
@@ -127,10 +134,12 @@ public class Thermostat extends Activity {
 		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 		setContentView(R.layout.thermostat);
 
-		sSettings = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+		SharedPreferences sSettings = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
 		state_old = savedInstanceState;
 
 		thermostatContext = this;
+
+		Toast.makeText(getApplicationContext(), "ping.", Toast.LENGTH_LONG).show();
 
 		// find controls
 		msg_line = (TextView) findViewById(R.id.status);
@@ -170,6 +179,15 @@ public class Thermostat extends Activity {
 		// set up fan spinner appearance and content
 		adapterFan = ArrayAdapter.createFromResource(this, R.array.fan, R.layout.largespinner);
 		adapterFan.setDropDownViewResource(R.layout.largespinner);
+	}
+
+	// this is called if we pop out and back in, so we have to see if the status page is being viewed and if it needs to be refreshed
+	@Override
+	protected void onRestart() {
+		super.onRestart();
+		if ((actionBar.getSelectedNavigationIndex() == 0) && (statusDisplay < System.currentTimeMillis() - STATUS_TIMEOUT)) {
+			thermostatContext.new FetchStatus().execute("tstat", "Loading status");
+		}
 	}
 
 	// stolen from the Android Developer Action Bar API Guide
@@ -233,11 +251,13 @@ public class Thermostat extends Activity {
 		for (String s : state_new.keySet()) {
 			outState.putString(s, state_new.get(s).toString());
 		}
+		outState.putLong(TIME_KEY, statusDisplay);
 	}
 
 	// restore the current tab position
 	@Override
 	public void onRestoreInstanceState(Bundle savedInstanceState) {
+		statusDisplay = savedInstanceState.getLong(TIME_KEY);
 		SharedPreferences pref = getSharedPreferences(PREFS_NAME, 0);
 		getActionBar().setSelectedNavigationItem(pref.getInt(PREF_TAB, 0));
 	}
@@ -551,7 +571,10 @@ public class Thermostat extends Activity {
 			if (layout == null) {
 				layout = inflater.inflate(R.layout.status_tab, container, false);
 			} else {
-				// already initialized
+				// already initialized, may need to be refreshed
+				if (thermostatContext.statusDisplay < System.currentTimeMillis() - STATUS_TIMEOUT) {
+					thermostatContext.new FetchStatus().execute("tstat", "Loading status");
+				}
 				return layout;
 			}
 
@@ -865,13 +888,24 @@ public class Thermostat extends Activity {
 	// set up status tab
 	class FetchStatus extends ReadURL {
 		@Override
+		protected void onPreExecute() {
+			// disable button so user can't hammer on it
+			statusRefresh.setEnabled(false);
+		}
+
+		@Override
 		protected void onPostExecute(Void result) {
 			setProgressBarIndeterminateVisibility(false);
+			statusRefresh.setEnabled(true);
 			if (error != null) {
 				status(error);
 				return;
 			}
 			state_new.put(path, json);
+
+			// save fetch time
+			statusDisplay = System.currentTimeMillis();
+
 			try {
 				// this will set the spinner, ignore that change
 				int oldMode = json.getInt("tmode");

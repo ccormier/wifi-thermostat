@@ -70,7 +70,7 @@
             android:layout_height="wrap_content">
             <TextView
                 style="@android:style/TextAppearance.Large"
-                android:text="Temperature: "
+                android:text="Current: "
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
             <TextView
@@ -80,6 +80,11 @@
                 android:paddingRight="25dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
+        </LinearLayout>
+        <LinearLayout
+            android:gravity="center"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
             <TextView
                 style="@android:style/TextAppearance.Large"
                 android:text="Target: "
