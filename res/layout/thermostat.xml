@@ -6,15 +6,17 @@
     android:orientation="vertical">
     <!-- tab bar container -->
     <FrameLayout
-    android:id="@+id/container"
-    android:layout_width="fill_parent"
-    android:layout_height="0px"
-    android:layout_weight="1" />
+        android:id="@+id/container"
+        android:layout_width="fill_parent"
+        android:layout_height="0px"
+        android:layout_weight="1" />
     <!-- bottom status line -->
+    <!-- this is focusable & selectable so users can copy/paste errors to 
+        email and send them to me -->
     <TextView
         android:id="@+id/status"
-        android:textIsSelectable="false"
-        android:focusable="false"
+        android:textIsSelectable="true"
+        android:focusable="true"
         android:layout_gravity="center_horizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />

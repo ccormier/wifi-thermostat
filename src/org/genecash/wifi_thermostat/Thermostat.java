@@ -51,7 +51,6 @@ import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.ToggleButton;
 
 public class Thermostat extends Activity {
@@ -76,6 +75,9 @@ public class Thermostat extends Activity {
 
 	// reload status page if it's older than this many milliseconds (5 minutes)
 	static final int STATUS_TIMEOUT = 5 * 60 * 1000;
+
+	// pause this many milliseconds between operations
+	static final int OPERATION_TIMEOUT = 1500;
 
 	// controls
 	static boolean oldHold;
@@ -120,7 +122,10 @@ public class Thermostat extends Activity {
 	final static HashMap<String, JSONObject> state_new = new HashMap<String, JSONObject>();
 
 	// last time the status page was displayed
-	long statusDisplay;
+	long statusDisplay = 0;
+
+	// last time we finished an operation to the thermostat
+	long operationTime = 0;
 
 	SimpleDateFormat prettyFormat = new SimpleDateFormat("hh:mm a", Locale.US);
 	Calendar cal = prettyFormat.getCalendar();
@@ -138,8 +143,6 @@ public class Thermostat extends Activity {
 		state_old = savedInstanceState;
 
 		thermostatContext = this;
-
-		Toast.makeText(getApplicationContext(), "ping.", Toast.LENGTH_LONG).show();
 
 		// find controls
 		msg_line = (TextView) findViewById(R.id.status);
@@ -335,9 +338,6 @@ public class Thermostat extends Activity {
 				return true;
 			}
 			new WriteURL().execute("tstat", json.toString(), "Setting time");
-
-			// it gets upset if we immediately grab the status afterwards
-			pause(500);
 			return true;
 		}
 
@@ -788,6 +788,10 @@ public class Thermostat extends Activity {
 		@Override
 		protected Void doInBackground(String... params) {
 			netLock.lock();
+			if (System.currentTimeMillis() < operationTime + OPERATION_TIMEOUT) {
+				// the thermostat is much happer if we give it a little time between operations
+				pause(OPERATION_TIMEOUT);
+			}
 			try {
 				path = params[0];
 				publishProgress(params[1]);
@@ -820,6 +824,7 @@ public class Thermostat extends Activity {
 			} finally {
 				netLock.unlock();
 			}
+			operationTime = System.currentTimeMillis();
 			return null;
 		}
 
@@ -842,6 +847,10 @@ public class Thermostat extends Activity {
 				state_old.remove(params[0]);
 			}
 			netLock.lock();
+			if (System.currentTimeMillis() < operationTime + OPERATION_TIMEOUT) {
+				// the thermostat is much happer if we give it a little time between operations
+				pause(OPERATION_TIMEOUT);
+			}
 			try {
 				publishProgress(params[2]);
 				URL url = new URL("http://" + addr + "/" + params[0]);
@@ -863,6 +872,7 @@ public class Thermostat extends Activity {
 			} finally {
 				netLock.unlock();
 			}
+			operationTime = System.currentTimeMillis();
 			return null;
 		}
 
@@ -878,8 +888,6 @@ public class Thermostat extends Activity {
 				status(error);
 				return;
 			}
-			// it's very much happier if we hold off for a bit
-			pause(500);
 			status("");
 			new FetchStatus().execute("tstat", "Loading status");
 		}
@@ -1216,8 +1224,10 @@ public class Thermostat extends Activity {
 
 	// report errors
 	static void status(Exception e) {
-		StackTraceElement[] st = e.getStackTrace();
-		String where = st[0].toString();
-		msg_line.setText("Error: " + e + "\n" + where);
+		String msg = "";
+		for (StackTraceElement elem : e.getStackTrace()) {
+			msg += "\n" + elem.toString();
+		}
+		msg_line.setText("Error: " + e + msg);
 	}
 }
