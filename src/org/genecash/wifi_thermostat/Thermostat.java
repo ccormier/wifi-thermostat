@@ -787,14 +787,15 @@ public class Thermostat extends Activity {
 
 		@Override
 		protected Void doInBackground(String... params) {
-			netLock.lock();
-			if (System.currentTimeMillis() < operationTime + OPERATION_TIMEOUT) {
-				// the thermostat is much happer if we give it a little time between operations
-				pause(OPERATION_TIMEOUT);
-			}
 			try {
+				netLock.lock();
 				path = params[0];
 				publishProgress(params[1]);
+
+				if (System.currentTimeMillis() < operationTime + OPERATION_TIMEOUT) {
+					// the thermostat is much happer if we give it a little time between operations
+					pause(OPERATION_TIMEOUT);
+				}
 
 				// check to see if we have this data already
 				if ((state_old != null) && (state_old.containsKey(path))) {
@@ -842,17 +843,21 @@ public class Thermostat extends Activity {
 
 		@Override
 		protected Void doInBackground(String... params) {
-			if (state_old != null) {
-				// remove stale value from cache
-				state_old.remove(params[0]);
-			}
-			netLock.lock();
-			if (System.currentTimeMillis() < operationTime + OPERATION_TIMEOUT) {
-				// the thermostat is much happer if we give it a little time between operations
-				pause(OPERATION_TIMEOUT);
-			}
 			try {
+				netLock.lock();
+
+				if (state_old != null) {
+					// remove stale value from cache
+					state_old.remove(params[0]);
+				}
+
 				publishProgress(params[2]);
+
+				if (System.currentTimeMillis() < operationTime + OPERATION_TIMEOUT) {
+					// the thermostat is much happer if we give it a little time between operations
+					pause(OPERATION_TIMEOUT);
+				}
+
 				URL url = new URL("http://" + addr + "/" + params[0]);
 				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 				conn.setDoOutput(true);
