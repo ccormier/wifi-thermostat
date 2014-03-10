@@ -29,6 +29,7 @@ import android.content.SharedPreferences;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
@@ -80,6 +81,7 @@ public class Thermostat extends Activity {
 	static final int OPERATION_TIMEOUT = 1500;
 
 	// controls
+	static boolean ignore;
 	static boolean oldHold;
 	static double oldTarget;
 	static double currentTarget;
@@ -143,6 +145,7 @@ public class Thermostat extends Activity {
 		state_old = savedInstanceState;
 
 		thermostatContext = this;
+		ignore = true;
 
 		// find controls
 		msg_line = (TextView) findViewById(R.id.status);
@@ -562,9 +565,6 @@ public class Thermostat extends Activity {
 	// handle the status tab
 	public static class StatusTab extends Fragment {
 		View layout = null;
-		// bugfix: spinner gets selected multiple times during initialization
-		int modeInitCtr = 2;
-		int fanInitCtr = 1;
 
 		@Override
 		public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -601,8 +601,7 @@ public class Thermostat extends Activity {
 				@Override
 				public void onItemSelected(AdapterView<?> arg0, View v, int position, long id) {
 					// bugfix: spinner gets selected multiple times during initialization
-					if (modeInitCtr > 0) {
-						modeInitCtr--;
+					if (ignore) {
 						return;
 					}
 
@@ -677,8 +676,7 @@ public class Thermostat extends Activity {
 				@Override
 				public void onItemSelected(AdapterView<?> arg0, View v, int position, long id) {
 					// bugfix: spinner gets selected multiple times during initialization
-					if (fanInitCtr > 0) {
-						fanInitCtr--;
+					if (ignore) {
 						return;
 					}
 
@@ -914,18 +912,24 @@ public class Thermostat extends Activity {
 				status(error);
 				return;
 			}
+
+			// ignore changes until we're done until we're done
+			ignore = true;
+			Handler handler = new Handler();
+			handler.postDelayed(new Runnable() {
+				@Override
+				public void run() {
+					ignore = false;
+				}
+			}, 250);
+
 			state_new.put(path, json);
 
 			// save fetch time
 			statusDisplay = System.currentTimeMillis();
 
 			try {
-				// this will set the spinner, ignore that change
-				int oldMode = json.getInt("tmode");
-				OnItemSelectedListener oldListener = mode.getOnItemSelectedListener();
-				mode.setOnItemSelectedListener(null);
-				mode.setSelection(oldMode);
-				mode.setOnItemSelectedListener(oldListener);
+				mode.setSelection(json.getInt("tmode"));
 
 				// IP address
 				statusAddr.setText(addr);
@@ -992,11 +996,7 @@ public class Thermostat extends Activity {
 
 				// fan
 				if (json.has("fmode")) {
-					// this will set the spinner, ignore that change
-					oldListener = statusFan.getOnItemSelectedListener();
-					statusFan.setOnItemSelectedListener(null);
 					statusFan.setSelection(json.getInt("fmode"));
-					statusFan.setOnItemSelectedListener(oldListener);
 				}
 				if (json.has("fstate")) {
 					if (json.getInt("fstate") == 0) {
