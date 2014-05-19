@@ -332,7 +332,7 @@ public class Thermostat extends Activity {
 			JSONObject json = new JSONObject();
 			JSONObject time = new JSONObject();
 			try {
-				time.put("day", cal.get(Calendar.DAY_OF_WEEK));
+				time.put("day", cal.get(Calendar.DAY_OF_WEEK) % 7);
 				time.put("hour", cal.get(Calendar.HOUR_OF_DAY));
 				time.put("minute", cal.get(Calendar.MINUTE));
 				json.put("time", time);
